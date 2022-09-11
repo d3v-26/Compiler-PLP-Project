@@ -51,16 +51,42 @@ public class Lexer implements ILexer {
 	@Override
 	public IToken next() throws LexicalException {
 		// TODO Auto-generated method stub
-		return null;
+		if(this.input.length() == 0 || this.line >= this.lines.size()|| this.lines.get(line).length() == 0) {
+			return new Token(Kind.EOF);
+		}
+		IToken token =  this.getToken();
+		if(token == null) {
+			this.handleNullToken();
+			return this.next();
+		}
+		else {			
+			this.pos += token.getText().length;			
+			if(this.pos >= this.lines.get(line).length()) {
+				this.pos = 0;
+				this.line = this.line + 1;
+			}
+			else if((int)this.lines.get(line).charAt(this.pos) == 10 | (int)this.lines.get(line).charAt(this.pos) == 13 ) {
+				this.pos = 0;
+				this.line = this.line + 1;				
+			}
+			return token;
+		}
 	}
 
 	@Override
 	public IToken peek() throws LexicalException {
 		// TODO Auto-generated method stub
-		if(this.input.length() == 0) {
+		if(this.input.length() == 0 || this.line >= this.lines.size()|| this.lines.get(line).length() == 0) {
 			return new Token(Kind.EOF);
 		}
-		return this.getToken();
+		IToken token =  this.getToken();
+		if(token == null) {
+			this.handleNullToken();
+			return this.peek();
+		}
+		else {
+			return token;
+		}
 	}
 
 	public SourceLocation getSource(int line, int pos) {
@@ -100,6 +126,42 @@ public class Lexer implements ILexer {
 		switch(currentChar) {
 			case ' ', '\n', '\r', '\t' -> {
 				return null;
+			}
+			case '+' -> {
+				if(currentState == States.START) {
+					char[] text = {'+'};
+					return new Token(Kind.PLUS, text, this.getSource(line, pos));
+				}
+				else {
+					throw new LexicalException("Invalid Character for Current State", this.getSource(line, pos));
+				}
+			}
+			case '.' -> {
+				if(currentState == States.START) {
+					char[] text = {'.'};
+					return new Token(Kind.DOT, text, this.getSource(line, pos));
+				}
+				else {
+					throw new LexicalException("Invalid Character for Current State", this.getSource(line, pos));
+				}
+			}
+			case ',' -> {
+				if(currentState == States.START) {
+					char[] text = {','};
+					return new Token(Kind.COMMA, text, this.getSource(line, pos));
+				}
+				else {
+					throw new LexicalException("Invalid Character for Current State", this.getSource(line, pos));
+				}
+			}
+			case ';' -> {
+				if(currentState == States.START) {
+					char[] text = {';'};
+					return new Token(Kind.SEMI, text, this.getSource(line, pos));
+				}
+				else {
+					throw new LexicalException("Invalid Character for Current State", this.getSource(line, pos));
+				}
 			}
 		}
 	}

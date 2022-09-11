@@ -68,8 +68,39 @@ public class Lexer implements ILexer {
 	}
 
 	public IToken getToken() throws LexicalException {
-		return null;
-	}
+		int line = this.line;
+		int startPos = this.pos;
+		States currentState = States.START;
+		if (this.line >= this.lines.size()) {
+			return new Token(Kind.EOF);
+		}
+		String currLine = this.lines.get(this.line);
+		char currentChar = currLine.charAt(this.pos);
 
-	
+		String[] bool_lit = {"TRUE", "FALSE"};
+		String[] KW = {"CONST", "VAR", "PROCEDURE", "CALL", "BEGIN", "END", "IF", "THEN", "WHILE", "DO"};
+		Kind[] tk = new Kind[] {Kind.KW_CONST, Kind.KW_VAR, Kind.KW_PROCEDURE, Kind.KW_CALL, Kind.KW_BEGIN, Kind.KW_END, Kind.KW_IF, Kind.KW_THEN, Kind.KW_WHILE, Kind.KW_DO};
+		
+		char[] identifiers = new char[64];
+		
+		int index = 0;
+		for(char i = 'a'; i <= 'z'; i++) {
+			identifiers[index] = i;
+			index++;
+		}
+		for(char i = 'A'; i <= 'Z'; i++) {
+			identifiers[index] = i;
+			index++;
+		}
+		identifiers[index] = '_';
+		identifiers[++index] = '$';
+		index++;
+		
+		
+		switch(currentChar) {
+			case ' ', '\n', '\r', '\t' -> {
+				return null;
+			}
+		}
+	}
 }

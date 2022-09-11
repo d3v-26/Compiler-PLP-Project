@@ -9,13 +9,15 @@ import edu.ufl.cise.plpfa22.Lexer.IToken.SourceLocation;
 
 /**
  * 
- * @author Dev's PC
+ * @author Dev's PC & Dharmam's PC
  * LEXER Class has following Constructors:
  * 	- Lexer(String)
  * 
  * LEXER Class has following methods:
  * 	- IToken next()
  *  - IToken peek()  
+ *  - SourceLocation getSource()
+ *  - IToken getToken()
  */
 
 
@@ -55,7 +57,19 @@ public class Lexer implements ILexer {
 	@Override
 	public IToken peek() throws LexicalException {
 		// TODO Auto-generated method stub
+		if(this.input.length() == 0) {
+			return new Token(Kind.EOF);
+		}
+		return this.getToken();
+	}
+
+	public SourceLocation getSource(int line, int pos) {
+		return new SourceLocation(line + 1, pos + 1);
+	}
+
+	public IToken getToken() throws LexicalException {
 		return null;
 	}
 
+	
 }

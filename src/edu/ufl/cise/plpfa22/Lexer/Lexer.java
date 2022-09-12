@@ -163,6 +163,104 @@ public class Lexer implements ILexer {
 					throw new LexicalException("Invalid Character for Current State", this.getSource(line, pos));
 				}
 			}
+			case '(' -> {
+				if(currentState == States.START) {
+					char[] text = {'('};
+					return new Token(Kind.LPAREN, text, this.getSource(line, pos));
+				}
+				else {
+					throw new LexicalException("Invalid Character for Current State", this.getSource(line, pos));
+				}
+			}
+			case ')' -> {
+				if(currentState == States.START) {
+					char[] text = {')'};
+					return new Token(Kind.RPAREN, text, this.getSource(line, pos));
+				}
+				else {
+					throw new LexicalException("Invalid Character for Current State", this.getSource(line, pos));
+				}
+			}
+			case '-' -> {
+				if(currentState == States.START) {
+					char[] text = {'-'};
+					return new Token(Kind.MINUS, text, this.getSource(line, pos));
+				}
+				else {
+					throw new LexicalException("Invalid Character for Current State", this.getSource(line, pos));
+				}
+			}
+			case '*' -> {
+				if(currentState == States.START) {
+					char[] text = {'*'};
+					return new Token(Kind.TIMES, text, this.getSource(line, pos));
+				}
+				else {
+					throw new LexicalException("Invalid Character for Current State", this.getSource(line, pos));
+				}
+			}
+			case '/' -> {
+				if(currentState == States.START) {
+					
+					if(currLine.charAt(startPos+1) == '/')
+					{		
+						return null;
+					}						
+					else {
+						char[] text = {'/'};
+						return new Token(Kind.DIV, text, this.getSource(line, pos));
+					}						
+				}
+				
+				else {
+					throw new LexicalException("Invalid Character for Current State", this.getSource(line, pos));
+				}
+			}
+			case '%' -> {
+				if(currentState == States.START) {
+					char[] text = {'%'};
+					return new Token(Kind.MOD, text, this.getSource(line, pos));
+				}
+				else {
+					throw new LexicalException("Invalid Character for Current State", this.getSource(line, pos));
+				}
+			}
+			case '?' -> {
+				if(currentState == States.START) {
+					char[] text = {'?'};
+					return new Token(Kind.QUESTION, text, this.getSource(line, pos));
+				}
+				else {
+					throw new LexicalException("Invalid Character for Current State", this.getSource(line, pos));
+				}
+			}
+			case '!' -> {
+				if(currentState == States.START) {
+					char[] text = {'!'};
+					return new Token(Kind.BANG, text, this.getSource(line, pos));
+				}
+				else {
+					throw new LexicalException("Invalid Character for Current State", this.getSource(line, pos));
+				}
+			}
+			case '=' -> {
+				if(currentState == States.START) {
+					char[] text = {'='};
+					return new Token(Kind.EQ, text, this.getSource(line, pos));
+				}
+				else {
+					throw new LexicalException("Invalid Character for Current State", this.getSource(line, pos));
+				}
+			}
+			case '#' -> {
+				if(currentState == States.START) {
+					char[] text = {'#'};
+					return new Token(Kind.NEQ, text, this.getSource(line, pos));
+				}
+				else {
+					throw new LexicalException("Invalid Character for Current State", this.getSource(line, pos));
+				}
+			}
 		}
 	}
 }

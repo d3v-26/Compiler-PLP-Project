@@ -261,6 +261,125 @@ public class Lexer implements ILexer {
 					throw new LexicalException("Invalid Character for Current State", this.getSource(line, pos));
 				}
 			}
+			case '>' -> {
+				if(currentState == States.START) {
+					currentState = States.HAVE_GT;
+					if (startPos+1 < currLine.length() && currLine.charAt(startPos+1) == '=') {
+						char[] text = {'>','='};
+						currentState = States.GE;
+						return new Token(Kind.GE, text, this.getSource(line, pos));
+					}
+					else {
+						char[] text = {'>'};
+						return new Token(Kind.GT, text, this.getSource(line, pos));
+					}
+					
+				}
+				else {
+					throw new LexicalException("Invalid Character for Current State", this.getSource(line, pos));
+				}
+			}
+			case '<' -> {
+				if(currentState == States.START) {
+					currentState = States.HAVE_LT;
+					if (startPos+1 < currLine.length() && currLine.charAt(startPos+1) == '=') {
+						char[] text = {'<','='};
+						currentState = States.LE;
+						return new Token(Kind.LE, text, this.getSource(line, pos));
+					}
+					else {
+						char[] text = {'<'};
+						return new Token(Kind.LT, text, this.getSource(line, pos));
+					}
+					
+				}
+				else {
+					throw new LexicalException("Invalid Character for Current State", this.getSource(line, pos));
+				}
+			}
+			case ':' -> {
+				if(currentState == States.START) {
+					currentState = States.HAVE_COLON;
+					if (startPos+1 < currLine.length() && currLine.charAt(startPos+1) == '=') {
+						char[] text = {':','='};
+						currentState = States.NEQ;
+						return new Token(Kind.NEQ, text, this.getSource(line, pos));
+					}
+					else {
+						String errMessage = "':' is followed by an illegal character";
+						return new Token(Kind.ERROR, errMessage.toCharArray(), this.getSource(line, pos));
+					}
+					
+				}
+				else {
+					throw new LexicalException("Invalid Character for Current State", this.getSource(line, pos));
+				}
+			}
+			case 'a' -> {
+				if(currentState == States.START) {
+					currentChar = currLine.charAt(startPos);
+					
+					String ident = "";
+					ident += currentChar;
+					
+					currentState = States.IDENT;
+					
+					for(char i = '0'; i <= '9'; i++) {
+						identifiers[index] = i;
+						index++;
+					}
+					
+					String identifier = "";
+					
+					identifier += currentChar;
+					while(startPos < currLine.length()) {
+						boolean contains = false;
+						startPos++;
+						char nextChar = 0;
+						if(startPos < currLine.length()) {							
+							nextChar = currLine.charAt(startPos);
+						}
+						else {
+							break;
+						}
+						for(char x : identifiers) {
+							if(x == nextChar) {
+								contains = true;
+								break;
+							}
+						}
+						if(contains) {
+							identifier += nextChar;
+							continue;
+						}
+						else {
+							break;
+						}
+					}
+					boolean isbool = Arrays.asList(bool_lit).contains(identifier);
+					if(isbool) {
+						boolean boolval = false;
+						currentState = States.BOOL_IDENT;
+						if(identifier.equals("TRUE")) {
+							boolval = true;
+						}
+						return new Token(Kind.BOOLEAN_LIT, identifier.toCharArray(), this.getSource(line, pos), boolval);
+						
+					}
+					List<String> kwlist = Arrays.asList(KW);
+					boolean iskw = kwlist.contains(identifier);
+					if(iskw) {
+						currentState = States.KW;
+						Kind k = tk[kwlist.indexOf(identifier)];
+						return new Token(k, identifier.toCharArray(), this.getSource(line, pos));
+					}
+					
+					return new Token(Kind.IDENT, identifier.toCharArray(), this.getSource(line, pos));
+				}					
+				else {
+					throw new LexicalException("Invalid Character for Current State", this.getSource(line, pos));
+				}
+			}
 		}
 	}
 }

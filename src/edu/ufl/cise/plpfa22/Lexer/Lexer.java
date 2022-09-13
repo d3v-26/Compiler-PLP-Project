@@ -380,6 +380,130 @@ public class Lexer implements ILexer {
 					throw new LexicalException("Invalid Character for Current State", this.getSource(line, pos));
 				}
 			}
+
+			//edit
+			case '0' ->{
+				if (currentState == States.START) {
+					char[] text = {'0'};
+					return new Token(Kind.NUM_LIT, text, this.getSource(line, pos), 0);
+				}
+				else {
+					throw new LexicalException("Invalid Character for Current State", this.getSource(line, pos));
+				}
+				
+			}
+			
+			//edit
+			case '1','2','3','4','5','6','7','8','9' -> {
+				if (currentState == States.START) {
+					String number = "";
+					number += currentChar;
+					char[] nums = {'0','1','2','3','4','5','6','7','8','9'};
+					while(startPos < currLine.length()) {
+						boolean contains = false;
+						char nextChar = 0;
+						startPos++;
+						if(startPos < currLine.length()) {							
+							nextChar = currLine.charAt(startPos);
+						}
+						else {
+							break;
+						}
+						for(char x : nums) {
+							if(x == nextChar) {
+								contains = true;
+								break;
+							}
+						}
+						if(contains) {
+							number += nextChar;
+							continue;
+						}
+						else {
+							break;
+						}
+					}
+					int num = 0;
+					try {						
+						num = Integer.parseInt(number);						
+					}
+					catch(NumberFormatException e) {
+						throw new LexicalException("Unable to Parse String", this.getSource(line, pos));
+					}
+					return new Token(Kind.NUM_LIT, number.toCharArray(), this.getSource(line, pos), num);
+				}
+				else {
+					throw new LexicalException("Invalid Character for Current State", this.getSource(line, pos));
+				}
+				
+			}
+			
+			case '"' -> {
+				int s = startPos;
+				char[] c = {'b','t','n','f','r','"','\'','\\'};
+				char[] cc = {'\b','\t', '\n', '\f', '\r', '\"', '\'','\\'};
+				if(currentState == States.START) {
+					currentState = States.HAVE_QUOTE;
+					String str = "";
+					str += '"';
+					while(startPos < currLine.length()) {
+						++startPos;
+						char nextChar = 0; 
+						if(startPos < currLine.length()) {							
+							nextChar = currLine.charAt(startPos);
+						}
+						else {
+							break;
+						}
+						
+						if(nextChar == '"' & currentState == States.HAVE_QUOTE ) {
+							str += '"';
+							currentState = States.HAVE_UNQUOTE;
+							break;
+						}
+						else if(nextChar == '\\' & currentState == States.HAVE_QUOTE) {
+							currentState = States.HAVE_QUOTE_SLASH;							
+						}
+						else if(currentState == States.HAVE_QUOTE_SLASH) {
+							boolean contains = false;
+							int inx = -1;
+							for(int i = 0; i<c.length; i++) {
+								char x = c[i];
+								if(x == nextChar) {
+									contains = true;
+									inx = i;
+									break;
+								}
+							}
+							if(!contains) {
+								throw new LexicalException("Invalid Character followed by \\", this.getSource(line, pos));
+							}
+							else {								
+								str+=cc[inx];
+								currentState = States.HAVE_QUOTE;
+							}
+						}
+						else {							
+							str += nextChar;
+						}
+					}
+					String val = str.substring(1,str.length()-1);
+					String text = currLine.substring(s, startPos+1);
+					if(currentState == States.HAVE_UNQUOTE) {						
+						return new Token(Kind.STRING_LIT, text.toCharArray(), this.getSource(line, pos), val);
+					}
+					else {
+						throw new LexicalException("Expected Unquote", this.getSource(line, pos));
+					}
+				}
+				else {
+					throw new LexicalException("Invalid Character for Current State", this.getSource(line, pos));
+				}
+			}
+			
+			default -> {
+				throw new LexicalException("Invalid Character", this.getSource(line, pos));
+			}
 		}
 	}
 }

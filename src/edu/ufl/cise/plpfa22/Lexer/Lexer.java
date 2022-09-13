@@ -93,6 +93,24 @@ public class Lexer implements ILexer {
 		return new SourceLocation(line + 1, pos + 1);
 	}
 
+
+	public void handleNullToken() {
+		String line = this.lines.get(this.line);
+		char currChar = line.charAt(this.pos);
+		while(currChar == ' ' | currChar == '\n' | currChar == '\t' | currChar == '\r') {
+			this.pos += 1;
+			if(this.pos > line.length()) {
+				this.line = this.line + 1;
+				this.pos = 0;
+			}
+			currChar = line.charAt(this.pos);
+		}
+		if(currChar == '/' & line.charAt(this.pos+1) == '/') {
+			this.line = this.line + 1;
+			this.pos = 0;
+		}
+	}
+	
 	public IToken getToken() throws LexicalException {
 		int line = this.line;
 		int startPos = this.pos;

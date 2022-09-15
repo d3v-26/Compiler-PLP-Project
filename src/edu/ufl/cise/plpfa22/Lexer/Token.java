@@ -1,14 +1,38 @@
 package edu.ufl.cise.plpfa22.Lexer;
 
+
+/**
+ * @author Dev's PC
+ * TOKEN Class has following Constructors:
+ * 	- Token(Kind):
+ *  - Token(Kind, Char[], SourceLocation): 
+ *  - Token(Kind, Char[], SourceLocation, int): 
+ *  - Token(Kind, Char[], SourceLocation, boolean): 
+ *  - Token(Kind, Char[], SourceLocation, String): 
+ *  
+ * TOKEN Class has following Methods:
+ * 	- Kind getKind():
+ *  - Char[] getText():
+ *  - SourceLocation getSourceLocation():
+ *  - int getIntValue(): 
+ *  - boolean getBooleanValue():
+ *  - String getStringValue(): 
+ */
+
 public class Token implements IToken {
 	
-	public Kind kind;
-	public char[] text;
-	public int intValue;
-	public String stringValue;
-	public boolean booleanValue;
-	public SourceLocation sourceLocation;
+	private Kind kind;
+	private char[] text;
+	private int intValue;
+	private String stringValue;
+	private boolean booleanValue;
+	private SourceLocation sourceLocation;
 	
+	public Token(Kind kind) {
+		super();
+		this.kind = kind;
+	}
+
 	public Token(Kind kind, char[] text, SourceLocation sourceLocation) {
 		super();
 		this.kind = kind;
@@ -44,25 +68,25 @@ public class Token implements IToken {
 
 	@Override
 	public Kind getKind() {
-		// TODO Auto-generated method stub
+		// Accessed as: Token.getKind(), Returns: Kind of the Token, Return Type: Kind;
 		return this.kind;
 	}
 
 	@Override
 	public char[] getText() {
-		// TODO Auto-generated method stub
+		// Accessed as: Token.getText(), Returns: Text of the Token, Return Type: Char[];
 		return this.text;
 	}
 
 	@Override
 	public SourceLocation getSourceLocation() {
-		// TODO Auto-generated method stub
+		// Accessed as: Token.getSourceLocation(), Returns: Location of the Token, Return Type: SourceLocation;
 		return this.sourceLocation;
 	}
 
 	@Override
 	public int getIntValue() {
-		// TODO Auto-generated method stub
+		// Accessed as: Token.getIntValue(), Returns: Integer value of the Token, Return Type: int;
 		if(this.kind != Kind.NUM_LIT) {
 			return 0;
 		}
@@ -71,7 +95,7 @@ public class Token implements IToken {
 
 	@Override
 	public boolean getBooleanValue() {
-		// TODO Auto-generated method stub
+		// Accessed as: Token.getBooleanValue(), Returns: Boolean value of the Token, Return Type: boolean;
 		if(this.kind != Kind.BOOLEAN_LIT) {
 			return false;
 		}
@@ -80,7 +104,7 @@ public class Token implements IToken {
 
 	@Override
 	public String getStringValue() {
-		// TODO Auto-generated method stub
+		// Accessed as: Token.getStringValue(), Returns: String value of the Token, Return Type: String;
 		if(this.kind != Kind.STRING_LIT) {
 			return new String();
 		}

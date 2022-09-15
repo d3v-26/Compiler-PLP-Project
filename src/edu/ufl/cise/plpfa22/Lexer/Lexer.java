@@ -55,14 +55,12 @@ public class Lexer implements ILexer {
 		
 		// First Check if the input is empty or Current Position of the internal pointer is empty, if so then return EOF token
 		if(this.input.length() == 0 || this.line >= this.lines.size()) {
-			System.out.println("In here 1 with current line: "+this.line);
 			return new Token(Kind.EOF);
 		}
 		if(this.lines.get(line).length() == 0 && this.line+1 < this.lines.size()) {
 			this.line++;
 		}
 		else if(this.lines.get(line).length() == 0 && this.line+1 >= this.lines.size()) {
-			System.out.println("In here 2");
 			return new Token(Kind.EOF);
 		}
 		//Calling getToken() to fetch the next token
@@ -159,10 +157,7 @@ public class Lexer implements ILexer {
 			else {				
 				currChar = line.charAt(this.pos);
 			}
-			System.out.println(this.lines.get(this.line));
-			System.out.println("Current char: "+ currChar);
-			System.out.println("Current Pos: "+this.line+" "+this.pos);
-		}
+			}
 		
 		
 		
@@ -182,8 +177,6 @@ public class Lexer implements ILexer {
 		
 		int line = this.line;
 		int startPos = this.pos;
-		System.out.println("line: "+ line);
-		System.out.println("Pos: "+ startPos);
 		// Set current state to START
 		States currentState = States.START;
 		
@@ -205,7 +198,6 @@ public class Lexer implements ILexer {
 		}
 		char currentChar = currLine.charAt(this.pos);
 		
-		System.out.println("Char: "+ currentChar);
 		// Initialized Boolean literals, Keywords, and identifers array
 		String[] bool_lit = {"TRUE", "FALSE"};
 		String[] KW = {"CONST", "VAR", "PROCEDURE", "CALL", "BEGIN", "END", "IF", "THEN", "WHILE", "DO"};

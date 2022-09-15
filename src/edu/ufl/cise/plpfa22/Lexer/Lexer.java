@@ -9,7 +9,7 @@ import edu.ufl.cise.plpfa22.Lexer.IToken.SourceLocation;
 
 /**
  * 
- * @author Dev's PC, Dharmam's PC
+ * @author Dev's PC and Dharmam's PC
  * LEXER Class has following Constructors:
  * 	- Lexer(String)
  * 
@@ -55,12 +55,14 @@ public class Lexer implements ILexer {
 		
 		// First Check if the input is empty or Current Position of the internal pointer is empty, if so then return EOF token
 		if(this.input.length() == 0 || this.line >= this.lines.size()) {
+			System.out.println("In here 1 with current line: "+this.line);
 			return new Token(Kind.EOF);
 		}
 		if(this.lines.get(line).length() == 0 && this.line+1 < this.lines.size()) {
 			this.line++;
 		}
 		else if(this.lines.get(line).length() == 0 && this.line+1 >= this.lines.size()) {
+			System.out.println("In here 2");
 			return new Token(Kind.EOF);
 		}
 		//Calling getToken() to fetch the next token
@@ -71,6 +73,9 @@ public class Lexer implements ILexer {
 			
 			// Calling the method again as we need a next token after handling null token.
 			return this.next();
+		}
+		else if(token.getKind() == Kind.STRING_LIT || token.getKind() == Kind.EOF) {
+			return token;
 		}
 		else {
 			
@@ -103,6 +108,9 @@ public class Lexer implements ILexer {
 		else if(this.lines.get(line).length() == 0 && this.line+1 >= this.lines.size()) {
 			return new Token(Kind.EOF);
 		}
+		
+		int startPos = this.pos;
+		int line = this.line;
 		//Calling getToken() to fetch the next token
 		IToken token =  this.getToken();
 		
@@ -112,6 +120,11 @@ public class Lexer implements ILexer {
 			
 			// Calling the method again as we need a next token after handling null token.
 			return this.peek();
+		}
+		else if(token.getKind() == Kind.STRING_LIT) {
+			this.pos = startPos;
+			this.line = line;
+			return token;
 		}
 		else {
 			return token;
@@ -135,16 +148,20 @@ public class Lexer implements ILexer {
 		// While current char is white space increment internal pointer.
 		while(currChar == ' ' | currChar == '\n' | currChar == '\t' | currChar == '\r') {
 			this.pos += 1;
-			if(this.pos > line.length()) {
-				this.line = this.line + 1;
+			if(this.pos >= line.length()) {
 				this.pos = 0;
-				if(this.line+1 < this.lines.size())
-				{					
+				if(this.line+1 < this.lines.size()){
+					this.line = this.line + 1;					
 					line = this.lines.get(this.line);
 					currChar = line.charAt(this.pos);
 				}
 			}
-			currChar = line.charAt(this.pos);
+			else {				
+				currChar = line.charAt(this.pos);
+			}
+			System.out.println(this.lines.get(this.line));
+			System.out.println("Current char: "+ currChar);
+			System.out.println("Current Pos: "+this.line+" "+this.pos);
 		}
 		
 		
@@ -156,12 +173,17 @@ public class Lexer implements ILexer {
 		}		
 	}
 	
+	public void errorThrown() {
+		this.line = this.lines.size();
+	}
+	
 	public IToken getToken() throws LexicalException {
 		// This method consists of core logic behind lexer as it generates new tokens on demand per each call.
 		
 		int line = this.line;
 		int startPos = this.pos;
-		
+		System.out.println("line: "+ line);
+		System.out.println("Pos: "+ startPos);
 		// Set current state to START
 		States currentState = States.START;
 		
@@ -172,8 +194,18 @@ public class Lexer implements ILexer {
 		
 		// Fetch current line and current character
 		String currLine = this.lines.get(this.line);
+		if(this.pos >= currLine.length() && (this.line + 1)< this.lines.size()) {
+			startPos = this.pos = 0;
+			this.line += 1;
+			line += 1;
+			currLine = this.lines.get(this.line);
+		}
+		else if(this.pos >= currLine.length() && (this.line + 1) >= this.lines.size()) {
+			return new Token(Kind.EOF);
+		}
 		char currentChar = currLine.charAt(this.pos);
-
+		
+		System.out.println("Char: "+ currentChar);
 		// Initialized Boolean literals, Keywords, and identifers array
 		String[] bool_lit = {"TRUE", "FALSE"};
 		String[] KW = {"CONST", "VAR", "PROCEDURE", "CALL", "BEGIN", "END", "IF", "THEN", "WHILE", "DO"};
@@ -217,6 +249,7 @@ public class Lexer implements ILexer {
 					return new Token(Kind.PLUS, text, this.getSource(line, pos));
 				}
 				else {
+					this.errorThrown();
 					throw new LexicalException("Invalid Character for Current State", this.getSource(line, pos));
 				}
 			}
@@ -226,6 +259,7 @@ public class Lexer implements ILexer {
 					return new Token(Kind.DOT, text, this.getSource(line, pos));
 				}
 				else {
+					this.errorThrown();
 					throw new LexicalException("Invalid Character for Current State", this.getSource(line, pos));
 				}
 			}
@@ -235,6 +269,7 @@ public class Lexer implements ILexer {
 					return new Token(Kind.COMMA, text, this.getSource(line, pos));
 				}
 				else {
+					this.errorThrown();
 					throw new LexicalException("Invalid Character for Current State", this.getSource(line, pos));
 				}
 			}
@@ -244,6 +279,7 @@ public class Lexer implements ILexer {
 					return new Token(Kind.SEMI, text, this.getSource(line, pos));
 				}
 				else {
+					this.errorThrown();
 					throw new LexicalException("Invalid Character for Current State", this.getSource(line, pos));
 				}
 			}
@@ -253,6 +289,7 @@ public class Lexer implements ILexer {
 					return new Token(Kind.LPAREN, text, this.getSource(line, pos));
 				}
 				else {
+					this.errorThrown();
 					throw new LexicalException("Invalid Character for Current State", this.getSource(line, pos));
 				}
 			}
@@ -262,6 +299,7 @@ public class Lexer implements ILexer {
 					return new Token(Kind.RPAREN, text, this.getSource(line, pos));
 				}
 				else {
+					this.errorThrown();
 					throw new LexicalException("Invalid Character for Current State", this.getSource(line, pos));
 				}
 			}
@@ -271,6 +309,7 @@ public class Lexer implements ILexer {
 					return new Token(Kind.MINUS, text, this.getSource(line, pos));
 				}
 				else {
+					this.errorThrown();
 					throw new LexicalException("Invalid Character for Current State", this.getSource(line, pos));
 				}
 			}
@@ -280,15 +319,15 @@ public class Lexer implements ILexer {
 					return new Token(Kind.TIMES, text, this.getSource(line, pos));
 				}
 				else {
+					this.errorThrown();
 					throw new LexicalException("Invalid Character for Current State", this.getSource(line, pos));
 				}
 			}
 			case '/' -> {
 				if(currentState == States.START) {
 					
-					if(currLine.charAt(startPos+1) == '/')
-					{	
-						
+					if((startPos+1) < currLine.length() && currLine.charAt(startPos+1) == '/')
+					{		
 						return null;
 					}						
 					else {
@@ -298,6 +337,7 @@ public class Lexer implements ILexer {
 				}
 				
 				else {
+					this.errorThrown();
 					throw new LexicalException("Invalid Character for Current State", this.getSource(line, pos));
 				}
 			}
@@ -307,6 +347,7 @@ public class Lexer implements ILexer {
 					return new Token(Kind.MOD, text, this.getSource(line, pos));
 				}
 				else {
+					this.errorThrown();
 					throw new LexicalException("Invalid Character for Current State", this.getSource(line, pos));
 				}
 			}
@@ -316,6 +357,7 @@ public class Lexer implements ILexer {
 					return new Token(Kind.QUESTION, text, this.getSource(line, pos));
 				}
 				else {
+					this.errorThrown();
 					throw new LexicalException("Invalid Character for Current State", this.getSource(line, pos));
 				}
 			}
@@ -325,6 +367,7 @@ public class Lexer implements ILexer {
 					return new Token(Kind.BANG, text, this.getSource(line, pos));
 				}
 				else {
+					this.errorThrown();
 					throw new LexicalException("Invalid Character for Current State", this.getSource(line, pos));
 				}
 			}
@@ -334,6 +377,7 @@ public class Lexer implements ILexer {
 					return new Token(Kind.EQ, text, this.getSource(line, pos));
 				}
 				else {
+					this.errorThrown();
 					throw new LexicalException("Invalid Character for Current State", this.getSource(line, pos));
 				}
 			}
@@ -343,6 +387,7 @@ public class Lexer implements ILexer {
 					return new Token(Kind.NEQ, text, this.getSource(line, pos));
 				}
 				else {
+					this.errorThrown();
 					throw new LexicalException("Invalid Character for Current State", this.getSource(line, pos));
 				}
 			}
@@ -363,6 +408,7 @@ public class Lexer implements ILexer {
 					
 				}
 				else {
+					this.errorThrown();
 					throw new LexicalException("Invalid Character for Current State", this.getSource(line, pos));
 				}
 			}
@@ -382,6 +428,7 @@ public class Lexer implements ILexer {
 					
 				}
 				else {
+					this.errorThrown();
 					throw new LexicalException("Invalid Character for Current State", this.getSource(line, pos));
 				}
 			}
@@ -395,12 +442,14 @@ public class Lexer implements ILexer {
 						return new Token(Kind.ASSIGN, text, this.getSource(line, pos));
 					}
 					else {
+						this.errorThrown();
 						String errMessage = "':' is followed by an illegal character";
 						throw new LexicalException(errMessage, this.getSource(line, pos));
 					}
 					
 				}
 				else {
+					this.errorThrown();
 					throw new LexicalException("Invalid Character for Current State", this.getSource(line, pos));
 				}
 			}
@@ -474,6 +523,7 @@ public class Lexer implements ILexer {
 					return new Token(Kind.IDENT, identifier.toCharArray(), this.getSource(line, pos));
 				}					
 				else {
+					this.errorThrown();
 					throw new LexicalException("Invalid Character for Current State", this.getSource(line, pos));
 				}
 			}
@@ -485,6 +535,7 @@ public class Lexer implements ILexer {
 					return new Token(Kind.NUM_LIT, text, this.getSource(line, pos), 0);
 				}
 				else {
+					this.errorThrown();
 					throw new LexicalException("Invalid Character for Current State", this.getSource(line, pos));
 				}
 				
@@ -536,6 +587,7 @@ public class Lexer implements ILexer {
 					return new Token(Kind.NUM_LIT, number.toCharArray(), this.getSource(line, pos), num);
 				}
 				else {
+					this.errorThrown();
 					throw new LexicalException("Invalid Character for Current State", this.getSource(line, pos));
 				}
 				
@@ -545,13 +597,13 @@ public class Lexer implements ILexer {
 				
 				// This case matches the string literals
 				int s = startPos;
+				int l = this.line;
+				int startLine = this.line;
+				currLine = this.lines.get(startLine);
 				char[] c = {'b','t','n','f','r','"','\'','\\'};
 				char[] cc = {'\b','\t', '\n', '\f', '\r', '\"', '\'','\\'};
 				if(currentState == States.START) {
-					currentState = States.HAVE_QUOTE;
-					String str = "";
-					str += '"';
-					
+					currentState = States.HAVE_QUOTE;					
 					// While we don't encounter another '"' fetch next character
 					// Along the way we'll check for all characters in cc array
 					while(startPos < currLine.length()) {
@@ -561,12 +613,19 @@ public class Lexer implements ILexer {
 							nextChar = currLine.charAt(startPos);
 						}
 						else {
-							break;
+							startLine++; 
+							if(startLine < this.lines.size()) {								
+								currLine = this.lines.get(startLine);
+							}
+							else {
+								break;
+							}							
+							startPos=0;
+							nextChar = currLine.charAt(startPos);
 						}
 						
 						// We have used states to check if the string literal is acceptable or not
 						if(nextChar == '"' & currentState == States.HAVE_QUOTE ) {
-							str += '"';
 							currentState = States.HAVE_UNQUOTE;
 							break;
 						}
@@ -585,34 +644,61 @@ public class Lexer implements ILexer {
 								}
 							}
 							if(!contains) {
+								this.errorThrown();
 								throw new LexicalException("Invalid Character followed by \\", this.getSource(line, pos));
 							}
 							else {								
-								str+=cc[inx];
 								currentState = States.HAVE_QUOTE;
 							}
-						}
-						else {							
-							str += nextChar;
-						}
+						}						
 					}
 					
 					// Return the string token.
-					String val = str.substring(1,str.length()-1);
-					String text = currLine.substring(s, startPos+1);
-					if(currentState == States.HAVE_UNQUOTE) {						
-						return new Token(Kind.STRING_LIT, text.toCharArray(), this.getSource(line, pos), val);
+					String text = "";
+					if(l == startLine) {
+						text = this.lines.get(l).substring(s, startPos+1);
+					}
+					else {						
+						for(int i = l; i <= startLine; i++) {
+							if(i==startLine && startLine < this.lines.size()) {
+								text += this.lines.get(i).substring(0, startPos+1);
+							}
+							else {
+								if(i < this.lines.size()) {								
+									text += this.lines.get(i);
+									text += '\n';
+								}
+								else {
+									break;
+								}
+							}
+						}
+					}
+					String m = text.substring(1, text.length()-1);
+					for(int i = 0; i < 8; i++) {
+						char cur = c[i];
+						char r = cc[i];
+						m = m.replace("\\"+cur, ""+r);
+					}					
+					
+					if(currentState == States.HAVE_UNQUOTE) {
+						this.line = startLine;
+						this.pos = startPos+1;
+						return new Token(Kind.STRING_LIT, text.toCharArray(), this.getSource(line, s), m);
 					}
 					else {
+						this.errorThrown();
 						throw new LexicalException("Expected Unquote", this.getSource(line, pos));
 					}
 				}
 				else {
+					this.errorThrown();
 					throw new LexicalException("Invalid Character for Current State", this.getSource(line, pos));
 				}
 			}
 			
 			default -> {
+				this.errorThrown();
 				throw new LexicalException("Invalid Character", this.getSource(line, pos));
 			}
 			

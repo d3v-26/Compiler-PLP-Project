@@ -36,7 +36,7 @@ public class Lexer implements ILexer {
 		HAVE_COLON,
 		HAVE_EQUALS,
 		GE, LE, NEQ,
-		IDENT, KW, BOOL_IDENT
+		IDENT, KW, BOOL_IDENT, ASSIGN
 	}
 	
 	public Lexer(String input) {
@@ -54,13 +54,17 @@ public class Lexer implements ILexer {
 		// This Method returns the next token based on input and increments the internal pointer.
 		
 		// First Check if the input is empty or Current Position of the internal pointer is empty, if so then return EOF token
-		if(this.input.length() == 0 || this.line >= this.lines.size()|| this.lines.get(line).length() == 0) {
+		if(this.input.length() == 0 || this.line >= this.lines.size()) {
 			return new Token(Kind.EOF);
 		}
-		
+		if(this.lines.get(line).length() == 0 && this.line+1 < this.lines.size()) {
+			this.line++;
+		}
+		else if(this.lines.get(line).length() == 0 && this.line+1 >= this.lines.size()) {
+			return new Token(Kind.EOF);
+		}
 		//Calling getToken() to fetch the next token
 		IToken token =  this.getToken();
-		
 		//In our code, null token is returned for handling of whitespaces and comments
 		if(token == null) {
 			this.handleNullToken();
@@ -90,10 +94,15 @@ public class Lexer implements ILexer {
 		// This Method returns the next token based on input and does not increment the internal pointer.
 		
 		// First Check if the input is empty or Current Position of the internal pointer is empty, if so then return EOF token
-		if(this.input.length() == 0 || this.line >= this.lines.size()|| this.lines.get(line).length() == 0) {
+		if(this.input.length() == 0 || this.line >= this.lines.size()) {
 			return new Token(Kind.EOF);
 		}
-		
+		if(this.lines.get(line).length() == 0 && this.line+1 < this.lines.size()) {
+			this.line++;
+		}
+		else if(this.lines.get(line).length() == 0 && this.line+1 >= this.lines.size()) {
+			return new Token(Kind.EOF);
+		}
 		//Calling getToken() to fetch the next token
 		IToken token =  this.getToken();
 		
@@ -129,15 +138,22 @@ public class Lexer implements ILexer {
 			if(this.pos > line.length()) {
 				this.line = this.line + 1;
 				this.pos = 0;
+				if(this.line+1 < this.lines.size())
+				{					
+					line = this.lines.get(this.line);
+					currChar = line.charAt(this.pos);
+				}
 			}
 			currChar = line.charAt(this.pos);
 		}
 		
+		
+		
 		// If current line is a comment, skip it.
-		if(currChar == '/' & line.charAt(this.pos+1) == '/') {
+		if((this.pos+1) < line.length() && currChar == '/' && line.charAt(this.pos+1) == '/') {
 			this.line = this.line + 1;
-			this.pos = 0;
-		}
+			this.pos = 0;						
+		}		
 	}
 	
 	public IToken getToken() throws LexicalException {
@@ -271,7 +287,8 @@ public class Lexer implements ILexer {
 				if(currentState == States.START) {
 					
 					if(currLine.charAt(startPos+1) == '/')
-					{		
+					{	
+						
 						return null;
 					}						
 					else {
@@ -374,8 +391,8 @@ public class Lexer implements ILexer {
 					currentState = States.HAVE_COLON;
 					if (startPos+1 < currLine.length() && currLine.charAt(startPos+1) == '=') {
 						char[] text = {':','='};
-						currentState = States.NEQ;
-						return new Token(Kind.NEQ, text, this.getSource(line, pos));
+						currentState = States.ASSIGN;
+						return new Token(Kind.ASSIGN, text, this.getSource(line, pos));
 					}
 					else {
 						String errMessage = "':' is followed by an illegal character";

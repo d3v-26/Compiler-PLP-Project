@@ -1,11 +1,11 @@
-package edu.ufl.cise.plpfa22.Lexer;
+package edu.ufl.cise.plpfa22;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
-import edu.ufl.cise.plpfa22.Lexer.IToken.Kind;
-import edu.ufl.cise.plpfa22.Lexer.IToken.SourceLocation;
+import edu.ufl.cise.plpfa22.IToken.Kind;
+import edu.ufl.cise.plpfa22.IToken.SourceLocation;
 
 /**
  * 

@@ -2,7 +2,7 @@
  * University of Florida during the Fall Semester 2022 as part of the course project.  No other use is authorized. 
  */
 
-package edu.ufl.cise.plpfa22.Lexer;
+package edu.ufl.cise.plpfa22;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -10,8 +10,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import edu.ufl.cise.plpfa22.CompilerComponentFactory;
-import edu.ufl.cise.plpfa22.Lexer.IToken.Kind;
+import edu.ufl.cise.plpfa22.IToken.Kind;
 
 class LexerTest {
 

@@ -2,9 +2,9 @@
  * University of Florida during the Fall Semester 2022 as part of the course project.  No other use is authorized. 
  */
 
-package edu.ufl.cise.plpfa22.Lexer;
+package edu.ufl.cise.plpfa22;
 
-import edu.ufl.cise.plpfa22.Lexer.IToken.SourceLocation;
+import edu.ufl.cise.plpfa22.IToken.SourceLocation;
 
 @SuppressWarnings("serial")
 public class LexicalException extends PLPException {

@@ -4,9 +4,6 @@
 
 package edu.ufl.cise.plpfa22;
 
-import edu.ufl.cise.plpfa22.Lexer.ILexer;
-import edu.ufl.cise.plpfa22.Lexer.Lexer;
-
 public class CompilerComponentFactory {
 
 	public static ILexer getLexer(String input) {

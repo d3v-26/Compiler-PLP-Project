@@ -1,4 +1,4 @@
-package edu.ufl.cise.plpfa22.Lexer;
+package edu.ufl.cise.plpfa22;
 
 
 /**

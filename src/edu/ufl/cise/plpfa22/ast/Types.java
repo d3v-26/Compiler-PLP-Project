@@ -2,15 +2,10 @@
  * University of Florida during the Fall Semester 2022 as part of the course project.  No other use is authorized. 
  */
 
-package edu.ufl.cise.plpfa22;
+package edu.ufl.cise.plpfa22.ast;
 
-public class CompilerComponentFactory {
-
-	public static ILexer getLexer(String input) {
-		return new Lexer(input);
-	}
+public class Types {
 	
-	public static IParser getParser(ILexer lexer) {
-		return null;
-	}
+	public static enum Type {NUMBER, BOOLEAN, STRING, PROCEDURE};
+
 }

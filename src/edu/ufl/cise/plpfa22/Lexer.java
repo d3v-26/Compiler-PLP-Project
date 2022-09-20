@@ -187,13 +187,13 @@ public class Lexer implements ILexer {
 		
 		// Fetch current line and current character
 		String currLine = this.lines.get(this.line);
-		if(this.pos >= currLine.length() && (this.line + 1)< this.lines.size()) {
+		while(this.pos >= currLine.length() && (this.line + 1)< this.lines.size()) {
 			startPos = this.pos = 0;
 			this.line += 1;
 			line += 1;
 			currLine = this.lines.get(this.line);
 		}
-		else if(this.pos >= currLine.length() && (this.line + 1) >= this.lines.size()) {
+		if(this.pos >= currLine.length() && (this.line + 1) >= this.lines.size()) {
 			return new Token(Kind.EOF);
 		}
 		char currentChar = currLine.charAt(this.pos);

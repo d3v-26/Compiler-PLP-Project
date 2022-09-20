@@ -247,12 +247,16 @@ class LexerTest {
 		String input = """
 				"This is a string"
 				// this is a comment
+				
+				
+				
+				
 				*
 				""";
 		show(input);
 		ILexer lexer = getLexer(input);
 		checkToken(lexer.next(), Kind.STRING_LIT, 1, 1);
-		checkToken(lexer.next(), Kind.TIMES, 3, 1);
+		checkToken(lexer.next(), Kind.TIMES, 7, 1);
 		checkEOF(lexer.next());
 	}
 
@@ -922,6 +926,47 @@ class LexerTest {
 	        this.checkIdent(lexer.next(), "def", 4, 2);
 	        checkEOF(lexer.next());
 	    }
+	
+	
+	@Test
+	public void testCustom1() throws LexicalException {
+		String input = """
 
+
+
+				VAR x=3;
+				CONST y=4;
+				
+				
+				IF x#y
+				
+				
+				
+				THEN TRUE;
+				""";
+		ILexer lexer = getLexer(input);
+		this.checkToken(lexer.next(), Kind.KW_VAR);
+		this.checkIdent(lexer.next(), "x", 4, 5);
+		this.checkToken(lexer.next(), Kind.EQ);
+		this.checkInt(lexer.next(), 3, 4, 7);
+		this.checkToken(lexer.next(), Kind.SEMI);
+		
+		this.checkToken(lexer.next(), Kind.KW_CONST);
+		this.checkIdent(lexer.next(), "y", 5, 7);
+		this.checkToken(lexer.next(), Kind.EQ);
+		this.checkInt(lexer.next(), 4, 5, 9);
+		this.checkToken(lexer.next(), Kind.SEMI);
+		
+		this.checkToken(lexer.next(), Kind.KW_IF);
+		this.checkIdent(lexer.next(), "x", 8, 4);
+		this.checkToken(lexer.next(), Kind.NEQ);
+		this.checkIdent(lexer.next(), "y", 8, 6);
+		
+		this.checkToken(lexer.next(), Kind.KW_THEN);
+		this.checkBool(lexer.next(), true);
+		this.checkToken(lexer.next(), Kind.SEMI);
+		
+		checkEOF(lexer.next());
+	}
 
 }

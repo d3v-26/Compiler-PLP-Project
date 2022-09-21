@@ -39,7 +39,26 @@ public class Parser implements IParser {
 		
 		return program();
 	}
-
+	
+	public Program program() throws LexicalException, SyntaxException {
+		IToken firstToken = this.lexer.peek();
+		Block b = block();
+		IToken t = this.lexer.next();
+		if(t.getKind() != Kind.EOF || t.getKind() != Kind.DOT) {
+			throw new SyntaxException();
+		}
+		return new Program(firstToken, b);
+	}
+	
+	public Block block() throws LexicalException, SyntaxException {
+		IToken firstToken = this.lexer.peek();
+		List<ConstDec> c = ConstDecs();
+		List<VarDec> v = VarDecs();
+		List<ProcDec> p = ProcDecs();
+		Statement s = Stmt();
+		return new Block(firstToken, c, v, p, s);
+	}
+	
 	public Statement Stmt() throws LexicalException, SyntaxException {
 		// TODO Auto-generated method stub
 		IToken firstToken = this.lexer.next();
@@ -128,24 +147,7 @@ public class Parser implements IParser {
 		return s;
 	}
 	
-	public Program program() throws LexicalException, SyntaxException {
-		IToken firstToken = this.lexer.peek();
-		Block b = block();
-		IToken t = this.lexer.next();
-		if(t.getKind() != Kind.EOF || t.getKind() != Kind.DOT) {
-			throw new SyntaxException();
-		}
-		return new Program(firstToken, b);
-	}
 	
-	public Block block() throws LexicalException, SyntaxException {
-		IToken firstToken = this.lexer.peek();
-		List<ConstDec> c = ConstDecs();
-		List<VarDec> v = VarDecs();
-		List<ProcDec> p = ProcDecs();
-		Statement s = Stmt();
-		return new Block(firstToken, c, v, p, s);
-	}
 	
 	private List<ProcDec> ProcDecs() {
 		// TODO Auto-generated method stub
@@ -164,6 +166,8 @@ public class Parser implements IParser {
 
 	public Expression Expr() {
 		// TODO Auto-generated method stub
+		IToken firstToken = this.lexer.next();
+		Expression s;
 		
 		//Statement s;
 		return null;

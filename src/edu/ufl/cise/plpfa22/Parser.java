@@ -14,11 +14,18 @@ import edu.ufl.cise.plpfa22.ast.ProcDec;
 import edu.ufl.cise.plpfa22.ast.Program;
 import edu.ufl.cise.plpfa22.ast.Statement;
 import edu.ufl.cise.plpfa22.ast.StatementAssign;
+import edu.ufl.cise.plpfa22.ast.StatementBlock;
+import edu.ufl.cise.plpfa22.ast.StatementCall;
 import edu.ufl.cise.plpfa22.ast.StatementEmpty;
+import edu.ufl.cise.plpfa22.ast.StatementIf;
+import edu.ufl.cise.plpfa22.ast.StatementInput;
+import edu.ufl.cise.plpfa22.ast.StatementOutput;
+import edu.ufl.cise.plpfa22.ast.StatementWhile;
 import edu.ufl.cise.plpfa22.ast.VarDec;
 
 public class Parser implements IParser {
 	
+	private static final Kind KW_END = null;
 	public ILexer lexer;
 	
 	public Parser(ILexer lexer) {
@@ -30,10 +37,13 @@ public class Parser implements IParser {
 	public ASTNode parse() throws PLPException {
 		// TODO Auto-generated method stub
 		
-		// Program's First Token
+		return program();
+	}
+
+	public Statement Stmt() throws LexicalException, SyntaxException {
+		// TODO Auto-generated method stub
 		IToken firstToken = this.lexer.next();
 		Statement s;
-		// Switch on firstToken to match IDENT, CALL, ?, !, BEGIN, IF, WHILE, DOT
 		switch(firstToken.getKind()) {
 			case IDENT -> {
 				Ident id = new Ident(firstToken);
@@ -45,39 +55,118 @@ public class Parser implements IParser {
 					Expression e = Expr();
 					s = new StatementAssign(firstToken, id, e);
 				}
-			} 
+			}
+			case KW_CALL ->{
+				IToken nextToken = this.lexer.next();
+				// Error thrown if kind of next token is not IDENT
+				Ident id = new Ident(nextToken);
+				s = new StatementCall(firstToken, id);
+			}
+			case QUESTION -> {
+				IToken nextToken = this.lexer.next();
+				Ident id = new Ident(nextToken);
+				s = new StatementInput(firstToken, id);
+			}
+			case BANG -> {
+				IToken nextToken = this.lexer.next();
+				Ident id = new Ident(nextToken);
+				Expression e = Expr();
+				s = new StatementOutput(firstToken, e);
+			}
+			case KW_BEGIN ->{
+				IToken nextToken = this.lexer.next();
+				Ident id = new Ident(nextToken);
+				
+				List<Statement> stmt = new ArrayList<Statement>();
+				while(this.lexer.peek().getStringValue() == ";")
+				{
+					this.lexer.next();
+					stmt.add(Stmt());
+				}
+				if(this.lexer.peek().getKind()==KW_END){
+					s = new StatementBlock(firstToken, stmt);
+					this.lexer.next();
+				}
+				else {
+					throw new SyntaxException("'END' keyword expected");
+				}
+			}
+			
+			case KW_IF -> {
+				Expression e = Expr();
+				//s = new StatementAssign(nextToken, id, e);
+				if(this.lexer.peek().getKind()==Kind.KW_THEN) {
+					this.lexer.next();
+					Statement stmt = Stmt();
+					s = new StatementIf(this.lexer.next(), e, stmt);
+				}
+				else {
+					throw new SyntaxException("'THEN' keyword expected");
+				}
+			}
+			
+			case KW_WHILE -> {
+				Expression e = Expr();
+				if(this.lexer.peek().getKind()==Kind.KW_DO) {
+					//statement_while
+					this.lexer.next();
+					Statement stmt = Stmt();
+					s = new StatementWhile(this.lexer.next(), e, stmt);
+				}
+				else {
+					throw new SyntaxException("'DO' keyword expected");
+				}
+			}
+			//handle 'null case' left to be implemented
+			case DOT -> {
+				s = new StatementEmpty(firstToken);
+			}
 			default -> {
 				throw new SyntaxException();
 			}
 		}
-		
-		// Block's First Token
-		IToken blockFirstToken = null;
-		
-		
-		// CONSTs
-		List<ConstDec> constants = new ArrayList<ConstDec>();
-		
-		// VARs
-		List<VarDec> variables = new ArrayList<VarDec>();
-		
-		// PROCEDUREs
-		List<ProcDec> procedures = new ArrayList<ProcDec>();
-		
-		// STATEMENTs we need specific call
-
-		
-		// Block, for that we need CONSTs, VARs, PROCEDUREs and STATEMENTs
-		Block block = new Block(blockFirstToken, constants, variables, procedures, s);
-		
-		// We need to return AST of class Program
-		Program program = new Program(firstToken, block);
-		return program;
+		return s;
 	}
-
-	private Expression Expr() {
+	
+	public Program program() throws LexicalException, SyntaxException {
+		IToken firstToken = this.lexer.peek();
+		Block b = block();
+		IToken t = this.lexer.next();
+		if(t.getKind() != Kind.EOF || t.getKind() != Kind.DOT) {
+			throw new SyntaxException();
+		}
+		return new Program(firstToken, b);
+	}
+	
+	public Block block() throws LexicalException, SyntaxException {
+		IToken firstToken = this.lexer.peek();
+		List<ConstDec> c = ConstDecs();
+		List<VarDec> v = VarDecs();
+		List<ProcDec> p = ProcDecs();
+		Statement s = Stmt();
+		return new Block(firstToken, c, v, p, s);
+	}
+	
+	private List<ProcDec> ProcDecs() {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
+	private List<VarDec> VarDecs() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	private List<ConstDec> ConstDecs() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public Expression Expr() {
+		// TODO Auto-generated method stub
+		
+		//Statement s;
+		return null;
+	}
+	
 }

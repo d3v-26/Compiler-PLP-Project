@@ -9,6 +9,10 @@ import edu.ufl.cise.plpfa22.ast.ASTVisitor;
 import edu.ufl.cise.plpfa22.ast.Block;
 import edu.ufl.cise.plpfa22.ast.ConstDec;
 import edu.ufl.cise.plpfa22.ast.Expression;
+import edu.ufl.cise.plpfa22.ast.ExpressionBinary;
+import edu.ufl.cise.plpfa22.ast.ExpressionBooleanLit;
+import edu.ufl.cise.plpfa22.ast.ExpressionNumLit;
+import edu.ufl.cise.plpfa22.ast.ExpressionStringLit;
 import edu.ufl.cise.plpfa22.ast.Ident;
 import edu.ufl.cise.plpfa22.ast.ProcDec;
 import edu.ufl.cise.plpfa22.ast.Program;
@@ -26,6 +30,7 @@ import edu.ufl.cise.plpfa22.ast.VarDec;
 public class Parser implements IParser {
 	
 	private static final Kind KW_END = null;
+	private static final Boolean False = null;
 	public ILexer lexer;
 	
 	public Parser(ILexer lexer) {
@@ -163,13 +168,92 @@ public class Parser implements IParser {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
-	public Expression Expr() {
+	
+	public Boolean checkOperators(Kind operatorToken) {
+		Boolean CheckResult = False;
+		if(operatorToken == Kind.GT || operatorToken == Kind.LT || operatorToken == Kind.EQ || operatorToken==Kind.NEQ || operatorToken==Kind.LE || operatorToken==Kind.GE) {
+				CheckResult= true; 
+		}
+		return CheckResult;
+	}
+	
+	public Expression Expr() throws SyntaxException, LexicalException {
 		// TODO Auto-generated method stub
-		IToken firstToken = this.lexer.next();
-		Expression s;
-		
-		//Statement s;
+		//IToken firstToken = this.lexer.next();
+		IToken FirstToken = this.lexer.next();
+		Expression FirstAddExpr = AdditiveExpr(); 
+		Kind operatorToken = this.lexer.peek().getKind();
+		while(checkOperators(operatorToken)) {
+			//List<Expression> expressionArray = new ArrayList<Expression>();
+			IToken operator = this.lexer.next();
+			Expression SecondAddExpr = AdditiveExpr();
+			FirstAddExpr = new ExpressionBinary(FirstToken,FirstAddExpr,operator, SecondAddExpr);
+			
+		}
+		return FirstAddExpr;
+	}
+	
+	public Expression AdditiveExpr() throws SyntaxException, LexicalException {
+		IToken FirstToken = this.lexer.next();
+		Expression FirstAddExpr = MultiplicationExpr();
+		Kind operatorToken = this.lexer.peek().getKind();
+		return null;
+	}
+	
+	public Boolean checkOperators_multi(Kind operatorToken) {
+		Boolean CheckResult = False;
+		if(operatorToken == Kind.P || operatorToken == Kind.minus || operatorToken == Kind.EQ || operatorToken==Kind.NEQ || operatorToken==Kind.LE || operatorToken==Kind.GE) {
+				CheckResult= true; 
+		}
+		return CheckResult;
+	}
+	
+	public Expression MultiplicationExpr() throws SyntaxException, LexicalException {
+		IToken FirstToken = this.lexer.next();
+		Expression FirstAddExpr = PrimaryExpr(); 
+		Kind operatorToken = this.lexer.peek().getKind();
+		while(checkOperators_multi(operatorToken)) {
+			IToken operator = this.lexer.next();
+			Expression SecondAddExpr = AdditiveExpr();
+			FirstAddExpr = new ExpressionBinary(FirstToken,FirstAddExpr,operator, SecondAddExpr);
+		}
+		return FirstAddExpr;
+	}
+	
+	public Expression PrimaryExpr() throws SyntaxException, LexicalException {
+		Expression e = Expr();
+		switch(e.getType()) {
+//			case identifier -> {
+//				Ident id = new Ident(firstToken);
+//				IToken nextToken = this.lexer.next();
+//			}
+//			case const_var -> {
+//
+//				const_car();
+//			}
+//			case expression -> {
+//				
+//			}
+//			default -> throw new IllegalArgumentException("Unexpected value: " + firstToken.getKind());
+		}
+		return null;
+	}
+	
+	public Expression Constant_Value() throws SyntaxException, LexicalException {
+		//Expression e = Expr();
+		IToken FirstToken = this.lexer.next();
+		switch(FirstToken.getKind()) {
+			case NUM_LIT -> {
+				ExpressionNumLit expnum = new ExpressionNumLit(FirstToken);
+			}
+			case STRING_LIT -> {
+				ExpressionStringLit expnum = new ExpressionStringLit(FirstToken);
+			}
+			case BOOLEAN_LIT -> {
+				ExpressionBooleanLit expnum = new ExpressionBooleanLit(FirstToken);
+			}
+			default -> throw new IllegalArgumentException("Unexpected value: " + FirstToken.getKind());
+		}
 		return null;
 	}
 	

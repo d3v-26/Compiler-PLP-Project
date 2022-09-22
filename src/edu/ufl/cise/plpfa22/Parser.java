@@ -46,18 +46,51 @@ public class Parser implements IParser {
 		return program();
 	}
 	
+	public boolean isKind(IToken t, Kind kind) {
+		return t.getKind() == kind;
+	}
+	
+	public void consume() throws LexicalException {
+		System.out.println("Consuming Next Token: "+this.lexer.peek().getKind());
+		this.lexer.next();
+	}
+	
+	public IToken match(Kind kind) throws LexicalException, SyntaxException {
+		IToken t = this.lexer.next();
+		if(!isKind(t, kind)) {
+			throw new SyntaxException("Expected Kind: "+kind+" Found: "+t.getKind());
+		}
+		System.out.println("Matched kind: "+kind);
+		return t;
+	}
+	
+	public Object getValue(Expression e) throws SyntaxException {
+		IToken firstToken = e.firstToken;
+		if(isKind(firstToken, Kind.NUM_LIT)) {
+			return firstToken.getIntValue();
+		}
+		else if(isKind(firstToken, Kind.BOOLEAN_LIT)) {
+			return firstToken.getBooleanValue();
+		}
+		else if(isKind(firstToken, Kind.STRING_LIT)) {
+			return firstToken.getStringValue();
+		}
+		else {
+			throw new SyntaxException("Cannot evaluate Expression");
+		}
+	}
+	
 	public Program program() throws LexicalException, SyntaxException {
 		IToken firstToken = this.lexer.peek();
+		System.out.println("Program First Token: "+firstToken.getKind());
 		Block b = block();
-		IToken t = this.lexer.next();
-		if(t.getKind() != Kind.EOF || t.getKind() != Kind.DOT) {
-			throw new SyntaxException();
-		}
+		IToken t = this.lexer.next();		
 		return new Program(firstToken, b);
 	}
 	
 	public Block block() throws LexicalException, SyntaxException {
 		IToken firstToken = this.lexer.peek();
+		System.out.println("Block First Token: "+firstToken.getKind());
 		List<ConstDec> c = ConstDecs();
 		List<VarDec> v = VarDecs();
 		List<ProcDec> p = ProcDecs();
@@ -68,86 +101,77 @@ public class Parser implements IParser {
 	public Statement Stmt() throws LexicalException, SyntaxException {
 		// TODO Auto-generated method stub
 		IToken firstToken = this.lexer.next();
+		System.out.println("Stmt First Token: "+firstToken.getKind());
+		System.out.println("Stmt Next Token: "+this.lexer.peek().getKind());
 		Statement s;
 		switch(firstToken.getKind()) {
 			case IDENT -> {
+				System.out.println("Statement In Ident!!");
 				Ident id = new Ident(firstToken);
-				IToken nextToken = this.lexer.next();
-				if(nextToken.getKind() != Kind.ASSIGN) {
-					throw new SyntaxException();
-				}
-				else {
-					Expression e = Expr();
-					s = new StatementAssign(firstToken, id, e);
-				}
+				match(Kind.ASSIGN);
+				Expression e = Expr();
+				s = new StatementAssign(firstToken, id, e);
 			}
 			case KW_CALL ->{
-				IToken nextToken = this.lexer.next();
-				// Error thrown if kind of next token is not IDENT
-				Ident id = new Ident(nextToken);
+				System.out.println("Statement In call!!");
+				IToken identToken = match(Kind.IDENT);
+				Ident id = new Ident(identToken);
 				s = new StatementCall(firstToken, id);
+				System.out.println("In call Next Token: "+this.lexer.peek().getKind());
 			}
 			case QUESTION -> {
-				IToken nextToken = this.lexer.next();
-				Ident id = new Ident(nextToken);
+				System.out.println("Statement In Question!!");
+				IToken identToken = match(Kind.IDENT);
+				Ident id = new Ident(identToken);
 				s = new StatementInput(firstToken, id);
 			}
 			case BANG -> {
-				IToken nextToken = this.lexer.next();
-				Ident id = new Ident(nextToken);
+				System.out.println("Statement In Bang!!");
 				Expression e = Expr();
+				System.out.println("Expression returned in BANG: "+e.toString());
 				s = new StatementOutput(firstToken, e);
 			}
 			case KW_BEGIN ->{
-				IToken nextToken = this.lexer.next();
-				Ident id = new Ident(nextToken);
-				
+				System.out.println("Statement In Begin!!");
 				List<Statement> stmt = new ArrayList<Statement>();
-				while(this.lexer.peek().getStringValue() == ";")
-				{
-					this.lexer.next();
-					stmt.add(Stmt());
+				Statement firstStatement = Stmt();
+				
+				stmt.add(firstStatement);			
+				while(isKind(this.lexer.peek(), Kind.SEMI))
+				{					
+					consume();
+					Statement nextStatement = Stmt();
+					System.out.println(nextStatement.toString());
+					stmt.add(nextStatement);
 				}
-				if(this.lexer.peek().getKind()==KW_END){
-					s = new StatementBlock(firstToken, stmt);
-					this.lexer.next();
-				}
-				else {
-					throw new SyntaxException("'END' keyword expected");
-				}
+				System.out.println("Outloop Next Token: "+this.lexer.peek().getKind());
+				match(Kind.KW_END);
+				s = new StatementBlock(firstToken, stmt);				
 			}
 			
 			case KW_IF -> {
+				System.out.println("Statement In If!!");
 				Expression e = Expr();
-				//s = new StatementAssign(nextToken, id, e);
-				if(this.lexer.peek().getKind()==Kind.KW_THEN) {
-					this.lexer.next();
-					Statement stmt = Stmt();
-					s = new StatementIf(this.lexer.next(), e, stmt);
-				}
-				else {
-					throw new SyntaxException("'THEN' keyword expected");
-				}
+				
+				match(Kind.KW_THEN);
+				Statement stmt = Stmt();
+				s = new StatementIf(firstToken, e, stmt);
 			}
 			
 			case KW_WHILE -> {
+				System.out.println("Statement In While!!");
 				Expression e = Expr();
-				if(this.lexer.peek().getKind()==Kind.KW_DO) {
-					//statement_while
-					this.lexer.next();
-					Statement stmt = Stmt();
-					s = new StatementWhile(this.lexer.next(), e, stmt);
-				}
-				else {
-					throw new SyntaxException("'DO' keyword expected");
-				}
+				match(Kind.KW_DO);
+				Statement stmt = Stmt();
+				s = new StatementWhile(firstToken, e, stmt);
 			}
 			//handle 'null case' left to be implemented
 			case DOT -> {
+				System.out.println("Statement In DOT!!");
 				s = new StatementEmpty(firstToken);
 			}
 			default -> {
-				throw new SyntaxException();
+				throw new SyntaxException("Invalid Statement");
 			}
 		}
 		return s;
@@ -156,18 +180,13 @@ public class Parser implements IParser {
 	public List<ProcDec> ProcDecs() throws LexicalException, SyntaxException{
 		// TODO Auto-generated method stub
 		List<ProcDec> p = new ArrayList<ProcDec>();
-		
-		while(this.lexer.peek().getKind() == Kind.KW_PROCEDURE) {
+		System.out.println("Proc Decs first Token: "+this.lexer.peek().getKind());
+		while(isKind(this.lexer.peek(), Kind.KW_PROCEDURE)) {
 			IToken firstToken = this.lexer.next();
-			IToken id = null;
-			if(this.lexer.peek().getKind() == Kind.IDENT) {
-				id = this.lexer.next();
-			}
-			// else error
-			//check if ;
-			this.lexer.next();
+			IToken id = match(Kind.IDENT);			
+			match(Kind.SEMI);
 			Block b = block();
-			this.lexer.next();
+			match(Kind.SEMI);
 			p.add(new ProcDec(firstToken, id, b));
 		}
 		
@@ -178,19 +197,18 @@ public class Parser implements IParser {
 		// TODO Auto-generated method stub
 		List<VarDec> v = new ArrayList<VarDec>();
 		IToken firstToken = this.lexer.peek();
-		while(firstToken.getKind() == Kind.KW_VAR) {
-			this.lexer.next();
-			// Check if identifier
-			IToken id = this.lexer.next();
+		System.out.println("Var Decs first Token: "+firstToken.getKind());
+		if(isKind(firstToken, Kind.KW_VAR)) {
+			consume();
+			IToken id = match(Kind.IDENT);
 			v.add(new VarDec(firstToken, id));
-			while(this.lexer.peek().getKind() == Kind.COMMA) {
-				this.lexer.next();
-				v.add(new VarDec(firstToken, this.lexer.next()));
+			while(isKind(this.lexer.peek(), Kind.COMMA)) {
+				consume();
+				id = match(Kind.IDENT);
+				v.add(new VarDec(firstToken, id));
 			}
-			// Check semicolon
-			this.lexer.next();
-		}
-		
+			match(Kind.SEMI);
+		}		
 		return v;
 	}
 
@@ -198,131 +216,117 @@ public class Parser implements IParser {
 		// TODO Auto-generated method stub
 		List<ConstDec> c = new ArrayList<ConstDec>();
 		IToken firstToken = this.lexer.peek();
-		while(firstToken.getKind() == Kind.KW_CONST) {
-			this.lexer.next();
-			// Check if identifier
-			IToken id = this.lexer.next();
-			this.lexer.next();
+		System.out.println("Const Decs first Token: "+firstToken.getKind());
+		if(isKind(firstToken, Kind.KW_CONST)) {
+			consume();
+			IToken id = match(Kind.IDENT);
+			match(Kind.EQ);
 			Expression const_val = ConstantValue();
-			c.add(new ConstDec(firstToken, id, const_val));
-			while(this.lexer.peek().getKind() == Kind.COMMA) {
-				this.lexer.next();
-				id = this.lexer.next();
-				this.lexer.next();
+			Object val = getValue(const_val);
+			c.add(new ConstDec(firstToken, id, val));
+			while(isKind(this.lexer.peek(), Kind.COMMA)) {
+				consume();
+				id = match(Kind.IDENT);
+				match(Kind.EQ);
 				const_val = ConstantValue();
-				c.add(new ConstDec(firstToken, id, const_val));
+				val = getValue(const_val);
+				c.add(new ConstDec(firstToken, id, val));
 			}
-			// Check semicolon
-			this.lexer.next();
+			match(Kind.SEMI);
 		}
-		
 		return c;
 	}
 	
-	public Boolean checkOperators1(Kind operatorToken) {
-		Boolean CheckResult = False;
-		if(operatorToken == Kind.GT || operatorToken == Kind.LT || operatorToken == Kind.EQ || operatorToken==Kind.NEQ || operatorToken==Kind.LE || operatorToken==Kind.GE) {
-				CheckResult= true; 
-		}
-		return CheckResult;
+	public Boolean checkOperators1(Kind operatorToken) {		
+		return operatorToken == Kind.GT || operatorToken == Kind.LT || operatorToken == Kind.EQ || operatorToken==Kind.NEQ || operatorToken==Kind.LE || operatorToken==Kind.GE;
 	}
 	
 	public Boolean checkOperators2(Kind operatorToken) {
-		Boolean CheckResult = False;
-		if(operatorToken == Kind.PLUS || operatorToken == Kind.MINUS) {
-				CheckResult= true; 
-		}
-		return CheckResult;
+		return operatorToken == Kind.PLUS || operatorToken == Kind.MINUS;
 	}
 	
 	public Boolean checkOperators3(Kind operatorToken) {
-		Boolean CheckResult = False;
-		if(operatorToken == Kind.TIMES || operatorToken == Kind.DIV || operatorToken == Kind.MOD) {
-				CheckResult= true; 
-		}
-		return CheckResult;
+		return operatorToken == Kind.TIMES || operatorToken == Kind.DIV || operatorToken == Kind.MOD;
 	}
 	
 	public Expression Expr() throws SyntaxException, LexicalException {
 		// TODO Auto-generated method stub
-		//IToken firstToken = this.lexer.next();
-		IToken FirstToken = this.lexer.next();
-		Expression FirstAddExpr = AdditiveExpr(); 
+		IToken firstToken = this.lexer.peek();
+		System.out.println("Expr First Token: "+firstToken.getKind());
+		Expression firstAddExpr = AdditiveExpr(); 
 		Kind operatorToken = this.lexer.peek().getKind();
 		while(checkOperators1(operatorToken)) {
-			//List<Expression> expressionArray = new ArrayList<Expression>();
 			IToken operator = this.lexer.next();
-			Expression SecondAddExpr = AdditiveExpr();
-			FirstAddExpr = new ExpressionBinary(FirstToken, FirstAddExpr, operator, SecondAddExpr);
+			System.out.println("Expr Next Token OP: "+operator.getKind());
+			Expression secondAddExpr = AdditiveExpr();
+			firstAddExpr = new ExpressionBinary(firstToken, firstAddExpr, operator, secondAddExpr);
 			operatorToken = this.lexer.peek().getKind();
 		}
-		return FirstAddExpr;
+		return firstAddExpr;
 	}
 	
 	public Expression AdditiveExpr() throws SyntaxException, LexicalException {
-		IToken FirstToken = this.lexer.next();
-		Expression FirstMulExpr = MultiplicativeExpr();
+		IToken firstToken = this.lexer.peek();
+		System.out.println("Add Expr First Token: "+firstToken.getKind());
+		Expression firstMulExpr = MultiplicativeExpr();
 		Kind operatorToken = this.lexer.peek().getKind();
 		while(checkOperators2(operatorToken)) {
-			//List<Expression> expressionArray = new ArrayList<Expression>();
 			IToken operator = this.lexer.next();
-			Expression SecondMulExpr = MultiplicativeExpr();
-			FirstMulExpr = new ExpressionBinary(FirstToken, FirstMulExpr, operator, SecondMulExpr);
+			System.out.println("Add Expr Next Token OP: "+operator.getKind());
+			Expression secondMulExpr = MultiplicativeExpr();
+			firstMulExpr = new ExpressionBinary(firstToken, firstMulExpr, operator, secondMulExpr);
 			operatorToken = this.lexer.peek().getKind();
 		}
-		return FirstMulExpr;
+		return firstMulExpr;
 	}
 	
 	public Expression MultiplicativeExpr() throws SyntaxException, LexicalException {
-		IToken FirstToken = this.lexer.next();
-		Expression FirstPriExpr = PrimaryExpr(); 
+		IToken firstToken = this.lexer.peek();
+		System.out.println("Mul Expr First Token: "+firstToken.getKind());
+		Expression firstPriExpr = PrimaryExpr(); 
 		Kind operatorToken = this.lexer.peek().getKind();
 		while(checkOperators3(operatorToken)) {
 			IToken operator = this.lexer.next();
-			Expression SecondPriExpr = PrimaryExpr();
-			FirstPriExpr = new ExpressionBinary(FirstToken, FirstPriExpr, operator, SecondPriExpr);
+			System.out.println("Mul Expr Next Token OP: "+operator.getKind());
+			Expression secondPriExpr = PrimaryExpr();
+			firstPriExpr = new ExpressionBinary(firstToken, firstPriExpr, operator, secondPriExpr);
 			operatorToken = this.lexer.peek().getKind();
 		}
-		return FirstPriExpr;
+		return firstPriExpr;
 	}
 	
 	public Expression PrimaryExpr() throws SyntaxException, LexicalException {
 		IToken firstToken = this.lexer.peek();
-		if(firstToken.getKind() == Kind.LPAREN) {
-			this.lexer.next();
+		System.out.println("Primary Expr first Token: "+firstToken.getKind());
+		if(isKind(firstToken, Kind.LPAREN)) {
+			consume();
 			Expression e = Expr();
-			// Check for RParen
-			this.lexer.next();
+			match(Kind.RPAREN);
 			return e;
 		}
-		else if(firstToken.getKind() == Kind.IDENT) {
-			return new ExpressionIdent(this.lexer.next());
-		}
-		else if(firstToken.getKind() == Kind.NUM_LIT || firstToken.getKind() == Kind.BOOLEAN_LIT || firstToken.getKind() == Kind.STRING_LIT) {
-			return ConstantValue();
+		else if(isKind(firstToken, Kind.IDENT)) {
+			IToken id = match(Kind.IDENT);
+			return new ExpressionIdent(id);
 		}
 		else {
-			throw new SyntaxException();
-		}
+			return ConstantValue();
+		}		
 	}
 	
 	public Expression ConstantValue() throws SyntaxException, LexicalException {
-		//Expression e = Expr();
-		IToken FirstToken = this.lexer.next();
-		switch(FirstToken.getKind()) {
+		IToken firstToken = this.lexer.next();
+		System.out.println("ConstantValue first Token: "+firstToken.getKind());
+		switch(firstToken.getKind()) {
 			case NUM_LIT -> {
-				ExpressionNumLit expnum = new ExpressionNumLit(FirstToken);
-				return expnum;
+				return new ExpressionNumLit(firstToken);
 			}
 			case STRING_LIT -> {
-				ExpressionStringLit expnum = new ExpressionStringLit(FirstToken);
-				return expnum;
+				return new ExpressionStringLit(firstToken);
 			}
 			case BOOLEAN_LIT -> {
-				ExpressionBooleanLit expnum = new ExpressionBooleanLit(FirstToken);
-				return expnum;
+				return new ExpressionBooleanLit(firstToken);				
 			}
-			default -> throw new SyntaxException("Unexpected value: " + FirstToken.getKind());
+			default -> throw new SyntaxException("Unexpected Token: " + firstToken.getKind());
 		}
 		
 	}

@@ -11,6 +11,6 @@ public class CompilerComponentFactory {
 	}
 	
 	public static IParser getParser(ILexer lexer) {
-		return null;
+		return new Parser(lexer);
 	}
 }

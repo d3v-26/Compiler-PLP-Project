@@ -42,8 +42,11 @@ public class Parser implements IParser {
 	@Override
 	public ASTNode parse() throws PLPException {
 		// TODO Auto-generated method stub
-		
-		return program();
+		Program p = program();
+		if(this.lexer.peek().getKind() != Kind.EOF && this.lexer.peek().getKind() != Kind.DOT) {
+			throw new SyntaxException("Not Done!!");
+		}
+		return p;
 	}
 	
 	public boolean isKind(IToken t, Kind kind) {
@@ -84,7 +87,6 @@ public class Parser implements IParser {
 		IToken firstToken = this.lexer.peek();
 		System.out.println("Program First Token: "+firstToken.getKind());
 		Block b = block();
-		IToken t = this.lexer.next();		
 		return new Program(firstToken, b);
 	}
 	

@@ -466,13 +466,20 @@ class ParserTest {
 	void test12() throws PLPException {
 		String input = """
 				CONST a=3;
+				
 				VAR x,y,z;
+				
 				PROCEDURE p;
+				
+				
 				  VAR j;
 				  BEGIN
 				     ? x;
 				     IF x = 0 THEN ! y ;
-				     WHILE j < 24 DO CALL z
+				     WHILE j < 24 DO CALL			 z
+				     
+				     
+				     
 				  END;
 				! a+b - (c/e) * 35/(3+4)
 				.
@@ -649,5 +656,181 @@ class ParserTest {
 			ASTNode ast = getAST(input);
 		});
 	}
+	
+	@Test
+	   void coleTest1() throws PLPException{
+	       String input = """
+	           VAR x,y;
+	           PROCEDURE random;
+	               CALL random_int;
+	           BEGIN
+	           x := 10;
+	           y := random;
+	           IF (x > y) THEN ! \"Number 1 is larger than number 2\";
+	           IF (x < y) THEN ! \"Number 2 is larger than number 1\";
+	           IF (x = y) THEN ! \"Number 1 is equal to number 2\"
+	           END
+	           .
+	           """;
+	       ASTNode ast = getAST(input);
+	       assertThat("", ast, instanceOf(Program.class));
+	       Block v0 = ((Program) ast).block;
+	       assertThat("", v0, instanceOf(Block.class));
+	       List<VarDec> v1 = ((Block) v0).varDecs;
+	       assertEquals(2, v1.size());
+	       IToken v2 = ((VarDec) v1.get(0)).ident;
+	       assertEquals("x", String.valueOf(v2.getText()));
+	       IToken v3 = ((VarDec) v1.get(1)).ident;
+	       assertEquals("y", String.valueOf(v3.getText()));
+	       List<ProcDec> v4 = ((Block) v0).procedureDecs;
+	       assertEquals(1, v4.size());
+	       IToken v5 = ((ProcDec) v4.get(0)).ident;
+	       assertEquals("random", String.valueOf(v5.getText()));
+	       Block v6 = ((ProcDec) v4.get(0)).block;
+	       Statement v7 = ((Block) v6).statement;
+	       assertThat("", v7, instanceOf(StatementCall.class));
+	       Ident v8 = ((StatementCall) v7).ident;
+	       assertEquals("random_int", String.valueOf(v8.getText()));
+	       Statement v9 = ((Block) v0).statement;
+	       assertThat("", v9, instanceOf(StatementBlock.class));
+	       Statement v10 = ((StatementBlock) v9).statements.get(0);
+	       assertThat("", v10, instanceOf(StatementAssign.class));
+	       Ident v11 = ((StatementAssign) v10).ident;
+	       assertEquals("x", String.valueOf(v11.getText()));
+	       Expression v12 = ((StatementAssign) v10).expression;
+	       assertThat("", v12, instanceOf(ExpressionNumLit.class));
+	       Statement v13 = ((StatementBlock) v9).statements.get(1);
+	       assertThat("", v13, instanceOf(StatementAssign.class));
+	       Ident v14 = ((StatementAssign) v13).ident;
+	       assertEquals("y", String.valueOf(v14.getText()));
+	       Expression v15 = ((StatementAssign) v13).expression;
+	       assertThat("", v15, instanceOf(ExpressionIdent.class));
+	       Statement v16 = ((StatementBlock) v9).statements.get(2);
+	       assertThat("", v16, instanceOf(StatementIf.class));
+	       Expression v17 = ((StatementIf) v16).expression;
+	       assertEquals("x", String.valueOf(((ExpressionBinary) v17).e0.getFirstToken().getText()));
+	       assertEquals(">", String.valueOf(((ExpressionBinary) v17).op.getText()));
+	       assertEquals("y", String.valueOf(((ExpressionBinary) v17).e1.getFirstToken().getText()));
+	       Statement v18 = ((StatementIf) v16).statement;
+	       assertThat("", v18, instanceOf(StatementOutput.class));
+	       Expression v19 = ((StatementOutput) v18).expression;
+	       assertThat("", v19, instanceOf(ExpressionStringLit.class));
+	       assertEquals("\"Number 1 is larger than number 2\"", String.valueOf(v19.getFirstToken().getText()));
+	       Statement v20 = ((StatementBlock) v9).statements.get(3);
+	       assertThat("", v20, instanceOf(StatementIf.class));
+	       Expression v21 = ((StatementIf) v20).expression;
+	       assertEquals("x", String.valueOf(((ExpressionBinary) v21).e0.getFirstToken().getText()));
+	       assertEquals("<", String.valueOf(((ExpressionBinary) v21).op.getText()));
+	       assertEquals("y", String.valueOf(((ExpressionBinary) v21).e1.getFirstToken().getText()));
+	       Statement v22 = ((StatementIf) v20).statement;
+	       assertThat("", v22, instanceOf(StatementOutput.class));
+	       Expression v23 = ((StatementOutput) v22).expression;
+	       assertThat("", v23, instanceOf(ExpressionStringLit.class));
+	       assertEquals("\"Number 2 is larger than number 1\"", String.valueOf(v23.getFirstToken().getText()));
+	       Statement v24 = ((StatementBlock) v9).statements.get(4);
+	       assertThat("", v24, instanceOf(StatementIf.class));
+	       Expression v25 = ((StatementIf) v24).expression;
+	       assertEquals("x", String.valueOf(((ExpressionBinary) v25).e0.getFirstToken().getText()));
+	       assertEquals("=", String.valueOf(((ExpressionBinary) v25).op.getText()));
+	       assertEquals("y", String.valueOf(((ExpressionBinary) v25).e1.getFirstToken().getText()));
+	       Statement v26 = ((StatementIf) v24).statement;
+	       assertThat("", v26, instanceOf(StatementOutput.class));
+	       Expression v27 = ((StatementOutput) v26).expression;
+	       assertThat("", v27, instanceOf(ExpressionStringLit.class));
+	       assertEquals("\"Number 1 is equal to number 2\"", 
+	       String.valueOf(v27.getFirstToken().getText()));
+	   }
+	
+	@Test
+	   void coleTest2() throws PLPException{
+	       String input = """
+	               ! x = y # 10 > 7 <= 45 < 50 >= 56
+	               .
+	               """;
+	       ASTNode ast = getAST(input);
+	       assertThat("", ast, instanceOf(Program.class));
+	       Block v0 = ((Program) ast).block;
+	       assertThat("", v0, instanceOf(Block.class));
+	       Statement v1 = ((Block) v0).statement;
+	       assertThat("", v1, instanceOf(StatementOutput.class));
+	       Expression v2 = ((StatementOutput) v1).expression;
+	       assertThat("", v2, instanceOf(ExpressionBinary.class));
+	       assertEquals(">=", String.valueOf(((ExpressionBinary) v2).op.getText()));
+	       assertEquals("56", String.valueOf(((ExpressionBinary) v2).e1.getFirstToken().getText()));
+	       Expression v3 = ((ExpressionBinary) v2).e0;
+	       assertThat("", v3, instanceOf(ExpressionBinary.class));
+	       assertEquals("<", String.valueOf(((ExpressionBinary) v3).op.getText()));
+	       assertEquals("50", String.valueOf(((ExpressionBinary) v3).e1.getFirstToken().getText()));
+	       Expression v4 = ((ExpressionBinary) v3).e0;
+	       assertThat("", v4, instanceOf(ExpressionBinary.class));
+	       assertEquals("<=", String.valueOf(((ExpressionBinary) v4).op.getText()));
+	       assertEquals("45", String.valueOf(((ExpressionBinary) v4).e1.getFirstToken().getText()));
+	       Expression v5 = ((ExpressionBinary) v4).e0;
+	       assertThat("", v5, instanceOf(ExpressionBinary.class));
+	       assertEquals(">", String.valueOf(((ExpressionBinary) v5).op.getText()));
+	       assertEquals("7", String.valueOf(((ExpressionBinary) v5).e1.getFirstToken().getText()));
+	       Expression v6 = ((ExpressionBinary) v5).e0;
+	       assertThat("", v6, instanceOf(ExpressionBinary.class));
+	       assertEquals("#", String.valueOf(((ExpressionBinary) v6).op.getText()));
+	       assertEquals("10", String.valueOf(((ExpressionBinary) v6).e1.getFirstToken().getText()));
+	       Expression v7 = ((ExpressionBinary) v6).e0;
+	       assertThat("", v7, instanceOf(ExpressionBinary.class));
+	       assertEquals("=", String.valueOf(((ExpressionBinary) v7).op.getText()));
+	       assertEquals("y", String.valueOf(((ExpressionBinary) v7).e1.getFirstToken().getText()));
+	       assertEquals("x", String.valueOf(((ExpressionBinary) v7).e0.getFirstToken().getText()));
+	   }
+	@Test
+	   void test18() throws PLPException {
+	       String input = """
+	               ! ((2-a)+4)+3
+	               .
+	               """;
+	       ASTNode ast = getAST(input);
+	       assertThat("", ast, instanceOf(Program.class));
+	       Block v0 = ((Program) ast).block;
+	       Statement v1 = ((Block) v0).statement;
+	       assertThat("", v1, instanceOf(StatementOutput.class));
+	       Expression v2 = ((StatementOutput) v1).expression;
+	       assertThat("",v2, instanceOf(ExpressionBinary.class));
+	       Expression v3 = ((ExpressionBinary) v2).e0;
+	       assertThat("", v3, instanceOf(ExpressionBinary.class));
+	       Expression v4 = ((ExpressionBinary) v3).e0;
+	       assertThat("", v4, instanceOf(ExpressionBinary.class));
+	       Expression v5 = ((ExpressionBinary) v4).e0;
+	       assertThat("", v5, instanceOf(ExpressionNumLit.class));
+	       assertEquals("2", String.valueOf(v5.firstToken.getText()));
+	       Expression v6 = ((ExpressionBinary) v4).e1;
+	       assertThat("", v6, instanceOf(ExpressionIdent.class));
+	       assertEquals("a", String.valueOf(v6.firstToken.getText()));
+	       Expression v7 = ((ExpressionBinary) v3).e1;
+	       assertThat("", v7, instanceOf(ExpressionNumLit.class));
+	       assertEquals("4", String.valueOf(v7.firstToken.getText()));
+	       Expression v8 = ((ExpressionBinary) v2).e1;
+	       assertThat("", v8, instanceOf(ExpressionNumLit.class));
+	       assertEquals("3", String.valueOf(v8.firstToken.getText()));
+	       IToken v9 = ((ExpressionBinary) v2).op;
+	       assertEquals("+", String.valueOf(v9.getText()));
+	       IToken v10 = ((ExpressionBinary) v3).op;
+	       assertEquals("+", String.valueOf(v10.getText()));
+	       IToken v11 = ((ExpressionBinary) v4).op;
+	       assertEquals("-", String.valueOf(v11.getText()));
+	   }
+	 
+
+	// Test if you are checking for EOF
+	    @Test
+	    void InvalidEndChar() throws PLPException {
+	        String input = """
+	                VAR abc;
+	                . bruh
+	                """;
+	        assertThrows(SyntaxException.class, () -> {
+	            @SuppressWarnings("unused")
+	            ASTNode ast = getAST(input);
+	        });
+	    }
+
+
+
 
 }

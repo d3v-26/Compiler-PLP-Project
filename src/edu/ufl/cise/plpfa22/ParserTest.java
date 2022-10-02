@@ -830,7 +830,671 @@ class ParserTest {
 	        });
 	    }
 
+	    @Test
 
+        // Test the expression with parenthesis
+
+        void shr_test1() throws PLPException {
+
+                String input = """
+
+                            ! 40/((4+1)*2)
+
+                            .
+
+                                """;
+
+                ASTNode ast = getAST(input);
+
+                assertThat("", ast, instanceOf(Program.class));
+
+                Block v0 = ((Program) ast).block;
+
+                assertThat("", v0, instanceOf(Block.class));
+
+                List<ConstDec> v1 = ((Block) v0).constDecs;
+
+                assertEquals(0, v1.size());
+
+                List<VarDec> v2 = ((Block) v0).varDecs;
+
+                assertEquals(0, v2.size());
+
+                List<ProcDec> v3 = ((Block) v0).procedureDecs;
+
+                assertEquals(0, v3.size());
+
+                Statement v4 = ((Block) v0).statement;
+
+                assertThat("", v4, instanceOf(StatementOutput.class));
+
+                Expression v5 = ((StatementOutput) v4).expression;
+
+                assertThat("", v5, instanceOf(ExpressionBinary.class));
+
+                Expression v6 = ((ExpressionBinary) v5).e0;
+
+                assertThat("", v6, instanceOf(ExpressionNumLit.class));
+
+                IToken v7 = ((ExpressionNumLit) v6).firstToken;
+
+                assertEquals("40",String.valueOf(v7.getText()));
+
+                IToken v8 = ((ExpressionBinary) v5).op;
+
+                assertEquals("/", String.valueOf(v8.getText()));
+
+                Expression v9 = ((ExpressionBinary) v5).e1;
+
+                assertThat("", v9, instanceOf(ExpressionBinary.class));
+
+                Expression v10 = ((ExpressionBinary) v9).e0;
+
+                assertThat("", v10, instanceOf(ExpressionBinary.class));
+
+                Expression v11 = ((ExpressionBinary) v10).e0;
+
+                assertThat("", v11, instanceOf(ExpressionNumLit.class));
+
+                IToken v12 = ((ExpressionNumLit) v11).firstToken;
+
+                assertEquals("4", String.valueOf(v12.getText()));
+
+                IToken v13 = ((ExpressionBinary) v10).op;
+
+                assertEquals("+", String.valueOf(v13.getText()));
+
+                Expression v14 = ((ExpressionBinary) v10).e1;
+
+                assertThat("", v14, instanceOf(ExpressionNumLit.class));
+
+                IToken v15 = ((ExpressionNumLit) v14).firstToken;
+
+                assertEquals("1", String.valueOf(v15.getText()));
+
+                IToken v16 = ((ExpressionBinary) v9).op;
+
+                assertEquals("*", String.valueOf(v16.getText()));
+
+                Expression v17 = ((ExpressionBinary) v9).e1;
+
+                assertThat("", v14, instanceOf(ExpressionNumLit.class));
+
+                IToken v18 = ((ExpressionNumLit) v17).firstToken;
+
+                assertEquals("2", String.valueOf(v18.getText()));
+
+        }
+
+
+        @Test
+
+        // Test the expression with parenthesis
+
+        void shr_test2() throws PLPException {
+
+                String input = """
+
+                            ! 2+3*4
+
+                            .
+
+                                """;
+
+                ASTNode ast = getAST(input);
+
+                assertThat("", ast, instanceOf(Program.class));
+
+                Block v0 = ((Program) ast).block;
+
+                assertThat("", v0, instanceOf(Block.class));
+
+                List<ConstDec> v1 = ((Block) v0).constDecs;
+
+                assertEquals(0, v1.size());
+
+                List<VarDec> v2 = ((Block) v0).varDecs;
+
+                assertEquals(0, v2.size());
+
+                List<ProcDec> v3 = ((Block) v0).procedureDecs;
+
+                assertEquals(0, v3.size());
+
+                Statement v4 = ((Block) v0).statement;
+
+                assertThat("", v4, instanceOf(StatementOutput.class));
+
+                Expression v5 = ((StatementOutput) v4).expression;
+
+                assertThat("", v5, instanceOf(ExpressionBinary.class));
+
+                Expression v6 = ((ExpressionBinary) v5).e0;
+
+                assertThat("", v6, instanceOf(ExpressionNumLit.class));
+
+                IToken v7 = ((ExpressionNumLit) v6).firstToken;
+
+                assertEquals("2",String.valueOf(v7.getText()));
+
+                IToken v8 = ((ExpressionBinary) v5).op;
+
+                assertEquals("+", String.valueOf(v8.getText()));
+
+                Expression v9 = ((ExpressionBinary) v5).e1;
+
+                assertThat("", v9, instanceOf(ExpressionBinary.class));
+
+                Expression v10 = ((ExpressionBinary) v9).e0;
+
+                assertThat("", v10, instanceOf(ExpressionNumLit.class));
+
+                IToken v11 = ((ExpressionNumLit) v10).firstToken;
+
+                assertEquals("3", String.valueOf(v11.getText()));
+
+                IToken v12 = ((ExpressionBinary) v9).op;
+
+                assertEquals("*", String.valueOf(v12.getText()));
+
+                Expression v13 = ((ExpressionBinary) v9).e1;
+
+                assertThat("", v13, instanceOf(ExpressionNumLit.class));
+
+                IToken v14 = ((ExpressionNumLit) v13).firstToken;
+
+                assertEquals("4",String.valueOf(v14.getText()));
+
+        }
+
+
+@Test
+
+// Test the Procedure keyword
+
+void shr_test3() throws PLPException {
+
+  String input = """
+
+            PROCEDURE m;
+
+               ! "Procedure is working." ;
+
+            .
+
+        """;
+
+  // According to Phrase Structure, Should have “;” at end of procedure.
+
+  // DS - 2022-09-30
+
+  ASTNode ast = getAST(input);
+
+  assertThat("", ast, instanceOf(Program.class));
+
+  Block v0 = ((Program) ast).block;
+
+  assertThat("", v0, instanceOf(Block.class));
+
+  List<ConstDec> v1 = ((Block) v0).constDecs;
+
+  assertEquals(0, v1.size());
+
+  List<VarDec> v2 = ((Block) v0).varDecs;
+
+  assertEquals(0, v2.size());
+
+  List<ProcDec> v3 = ((Block) v0).procedureDecs;
+
+  assertEquals(1, v3.size());
+
+  assertThat("", v3.get(0), instanceOf(ProcDec.class));
+
+  Statement v4 = ((Block) v0).statement;
+
+  assertThat("", v4, instanceOf(StatementEmpty.class));
+
+  IToken v5 = ((ProcDec) v3.get(0)).ident;
+
+  assertEquals("m", String.valueOf(v5.getText()));
+
+  Block v6 = ((ProcDec) v3.get(0)).block;
+
+  assertThat("", v6, instanceOf(Block.class));
+
+  List<ConstDec> v7 = ((Block) v6).constDecs;
+
+  assertEquals(0, v7.size());
+
+  List<VarDec> v8 = ((Block) v6).varDecs;
+
+  assertEquals(0, v8.size());
+
+  List<ProcDec> v9 = ((Block) v6).procedureDecs;
+
+  assertEquals(0, v9.size());
+
+  Block v11 = ((ProcDec) v3.get(0)).block;
+
+  Statement v12 = ((Block) v11).statement;
+
+  assertThat("", v12, instanceOf(StatementOutput.class));
+
+  Expression v13 = ((StatementOutput) v12).expression;
+
+  assertThat("", v13, instanceOf(ExpressionStringLit.class));
+
+  assertEquals("Procedure is working.", v13.getFirstToken().getStringValue());
+
+}
+
+
+// Test the expression with parenthesis and incorrect semicolon
+
+@Test
+
+void shr_test4() {
+
+  String input = """
+
+            ! 40/((4+1)*2);
+
+            .
+
+        """;
+
+  assertThrows(SyntaxException.class, () -> {
+
+     @SuppressWarnings("unused")
+
+     ASTNode ast = getAST(input);
+
+  });
+
+}
+
+
+@Test
+
+void shr_test5() throws PLPException {
+
+  String input = """
+
+            WHILE (x > y) DO ! \"Number 1 is larger than number 2\"
+
+            .
+
+        """;
+
+  // <program> <statement (WHILE)> <statement (!)> <expression> . . . does not
+
+  //   have a terminal “;” DS 2022-09-30
+
+  ASTNode ast = getAST(input);
+
+  assertThat("", ast, instanceOf(Program.class));
+
+  Block v0 = ((Program) ast).block;
+
+  assertThat("", v0, instanceOf(Block.class));
+
+  List<ConstDec> v1 = ((Block) v0).constDecs;
+
+  assertEquals(0, v1.size());
+
+  List<VarDec> v2 = ((Block) v0).varDecs;
+
+  assertEquals(0, v2.size());
+
+  List<ProcDec> v3 = ((Block) v0).procedureDecs;
+
+  assertEquals(0, v3.size());
+
+  Statement v4 = ((Block) v0).statement;
+
+  assertThat("", v4, instanceOf(StatementWhile.class));
+
+  Expression v5 = ((StatementWhile) v4).expression;
+
+  assertEquals("x", String.valueOf(((ExpressionBinary) v5).e0.getFirstToken().getText()));
+
+  assertEquals(">", String.valueOf(((ExpressionBinary) v5).op.getText()));
+
+  assertEquals("y", String.valueOf(((ExpressionBinary) v5).e1.getFirstToken().getText()));
+
+  Statement v6 = ((StatementWhile) v4).statement;
+
+  assertThat("", v6, instanceOf(StatementOutput.class));
+
+  Expression v7 = ((StatementOutput) v6).expression;
+
+  assertThat("", v7, instanceOf(ExpressionStringLit.class));
+
+  assertEquals("\"Number 1 is larger than number 2\"", String.valueOf(v7.getFirstToken().getText()));
+
+}
+
+
+@Test
+
+   void coleTest3() throws PLPException {
+
+   String input = """
+
+               ! \"Spooky Month\";
+
+               ? input
+
+               .
+
+           """;
+
+   assertThrows(SyntaxException.class, () -> {
+
+       @SuppressWarnings("unused")
+
+       ASTNode ast = getAST(input);
+
+   });
+
+} //added missing parentheses
+
+
+
+
+//Testing a few errors
+
+
+@Test
+
+void aTest() throws PLPException
+
+{
+
+    String input = """
+
+                PROCEDURE;
+
+                .
+
+            """;
+
+    assertThrows(SyntaxException.class, () -> {
+
+            @SuppressWarnings("unused")
+
+            ASTNode ast = getAST(input);
+
+    });
+
+}
+
+
+@Test
+
+void aTest2() throws PLPException
+
+{
+
+    String input = """
+
+                PROCEDURE a;
+
+                            VAR b;
+
+                    CONST abc = 5
+
+                .
+
+            """;
+
+    assertThrows(SyntaxException.class, () -> {
+
+            @SuppressWarnings("unused")
+
+            ASTNode ast = getAST(input);
+
+    });
+
+}
+
+
+@Test
+
+void aTest3() throws PLPException
+
+{
+
+    String input = """
+
+                VAR abc = 5;
+
+                ! abc
+
+                .
+
+            """;
+
+    assertThrows(SyntaxException.class, () -> {
+
+            @SuppressWarnings("unused")
+
+            ASTNode ast = getAST(input);
+
+    });
+
+}
+
+
+@Test
+
+void aTest4() throws PLPException
+
+{
+
+    String input = """
+
+                CONST abc = 012;
+
+                .
+
+            """;
+
+    assertThrows(SyntaxException.class, () -> {
+
+            @SuppressWarnings("unused")
+
+            ASTNode ast = getAST(input);
+
+    });
+
+}
+
+
+@Test
+
+void aTest5() throws PLPException
+
+{
+
+    String input = """
+
+                VAR a, b, c;
+
+                c := a +-/ b
+
+               
+
+                .
+
+            """;
+
+    assertThrows(SyntaxException.class, () -> {
+
+            @SuppressWarnings("unused")
+
+            ASTNode ast = getAST(input);
+
+    });
+
+}
+
+
+@Test
+
+void aTest6() throws PLPException
+
+{
+
+    String input = """
+
+                VAR a b c;
+
+                .
+
+            """;
+
+    assertThrows(SyntaxException.class, () -> {
+
+            @SuppressWarnings("unused")
+
+            ASTNode ast = getAST(input);
+
+    });
+
+}
+
+
+
+//testing comments
+
+@Test
+
+void aTest7() throws PLPException
+
+{
+
+    String input = """
+
+                //VAR ignore this;
+
+                VAR var1;
+
+                .
+
+            """;
+
+    ASTNode ast = getAST(input);
+
+    assertThat("", ast, instanceOf(Program.class));
+
+    Block v0 = ((Program) ast).block;
+
+    assertThat("", v0, instanceOf(Block.class));
+
+    List<ConstDec> v1 = ((Block) v0).constDecs;
+
+    assertEquals(0, v1.size());
+
+    List<VarDec> v2 = ((Block) v0).varDecs;
+
+    assertEquals(1, v2.size());
+
+    assertThat("", v2.get(0), instanceOf(VarDec.class));
+
+    IToken v3 = ((VarDec) v2.get(0)).ident;
+
+    assertEquals("var1", String.valueOf(v3.getText()));
+
+    List<ProcDec> v4 = ((Block) v0).procedureDecs;
+
+    assertEquals(0, v4.size());
+
+    Statement v5 = ((Block) v0).statement;
+
+    assertThat("", v5, instanceOf(StatementEmpty.class));
+
+   
+
+}
+
+
+@Test
+
+void aTest8() throws PLPException
+
+{
+
+    String input = """
+
+                CONST TRUE = 1;
+
+                .
+
+            """;
+
+    assertThrows(SyntaxException.class, () -> {
+
+            @SuppressWarnings("unused")
+
+            ASTNode ast = getAST(input);
+
+    });
+
+}
+
+
+@Test
+
+void aTest9() throws PLPException {	
+
+    String input = """
+
+                    WHILE "xyz"
+
+                    DO
+
+                    .
+
+                    """;
+
+    ASTNode ast = getAST(input);
+
+    assertThat("", ast, instanceOf(Program.class));
+
+    Block v0 = ((Program) ast).block;
+
+    assertThat("", v0, instanceOf(Block.class));
+
+    List<ConstDec> v1 = ((Block) v0).constDecs;
+
+    assertEquals(0, v1.size());
+
+    List<VarDec> v2 = ((Block) v0).varDecs;
+
+    assertEquals(0, v2.size());
+
+    List<ProcDec> v3 = ((Block) v0).procedureDecs;
+
+    assertEquals(0, v3.size());
+
+    Statement v4 = ((Block) v0).statement;
+
+    assertThat("", v4, instanceOf(StatementWhile.class));
+
+    Expression v5 = ((StatementWhile) v4).expression;
+
+    assertThat("", v5, instanceOf(ExpressionStringLit.class));
+
+    IToken v6 = ((ExpressionStringLit) v5).firstToken;
+
+    assertEquals("xyz", v6.getStringValue());
+
+    Statement v7 = ((StatementWhile) v4).statement;
+
+    assertThat("", v7, instanceOf(StatementEmpty.class));
+
+}
 
 
 }

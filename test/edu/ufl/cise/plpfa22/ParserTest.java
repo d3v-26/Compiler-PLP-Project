@@ -651,5 +651,326 @@ class ParserTest {
 			ASTNode ast = getAST(input);
 		});
 	}
-
+	
+	@Test
+	void ctest1() throws PLPException {
+		String input = """
+				CONST a=3;
+				VAR x,y,z;
+				PROCEDURE p;
+				  VAR j;
+				  BEGIN
+				     ? x;
+				     IF x = 0 THEN ! y ;
+				  END;
+				.
+				""";
+		ASTNode ast = getAST(input);
+		assertThat("", ast, instanceOf(Program.class));
+		Block v0 = ((Program) ast).block;
+		assertThat("", v0, instanceOf(Block.class));
+		List<ConstDec> v1 = ((Block) v0).constDecs;
+		assertEquals(1, v1.size());
+		assertThat("", v1.get(0), instanceOf(ConstDec.class));
+		IToken v2 = ((ConstDec) v1.get(0)).ident;
+		assertEquals("a", String.valueOf(v2.getText()));
+		Integer v3 = (Integer) ((ConstDec) v1.get(0)).val;
+		assertEquals(3, v3);
+		List<VarDec> v4 = ((Block) v0).varDecs;
+		assertEquals(3, v4.size());
+		assertThat("", v4.get(0), instanceOf(VarDec.class));
+		IToken v5 = ((VarDec) v4.get(0)).ident;
+		assertEquals("x", String.valueOf(v5.getText()));
+		assertThat("", v4.get(1), instanceOf(VarDec.class));
+		IToken v6 = ((VarDec) v4.get(1)).ident;
+		assertEquals("y", String.valueOf(v6.getText()));
+		assertThat("", v4.get(2), instanceOf(VarDec.class));
+		IToken v7 = ((VarDec) v4.get(2)).ident;
+		assertEquals("z", String.valueOf(v7.getText()));
+		List<ProcDec> v8 = ((Block) v0).procedureDecs;
+		assertEquals(1, v8.size());
+		assertThat("", v8.get(0), instanceOf(ProcDec.class));
+		IToken v9 = ((ProcDec) v8.get(0)).ident;
+		assertEquals("p", String.valueOf(v9.getText()));
+		Block v10 = ((ProcDec) v8.get(0)).block;
+		assertThat("", v10, instanceOf(Block.class));
+		
+		List<VarDec> v12 = ((Block) v10).varDecs;
+		assertEquals(1, v12.size());
+		assertThat("", v12.get(0), instanceOf(VarDec.class));
+		IToken v13 = ((VarDec) v12.get(0)).ident;
+		assertEquals("j", String.valueOf(v13.getText()));
+		List<ProcDec> v14 = ((Block) v10).procedureDecs;
+		assertEquals(0, v14.size());
+		Statement v15 = ((Block) v10).statement;
+		assertThat("", v15, instanceOf(StatementBlock.class));
+		List<Statement> v16 = ((StatementBlock) v15).statements;
+		assertThat("", v16.get(0), instanceOf(StatementInput.class));
+		Ident v17 = ((StatementInput) v16.get(0)).ident;
+		assertEquals("x", String.valueOf(v17.getText()));
+		assertThat("", v16.get(1), instanceOf(StatementIf.class));
+		Expression v18 = ((StatementIf) v16.get(1)).expression;
+		assertThat("", v18, instanceOf(ExpressionBinary.class));
+		Expression v19 = ((ExpressionBinary) v18).e0;
+		assertThat("", v19, instanceOf(ExpressionIdent.class));
+		IToken v20 = ((ExpressionIdent) v19).firstToken;
+		assertEquals("x", String.valueOf(v20.getText()));
+		Expression v21 = ((ExpressionBinary) v18).e1;
+		assertThat("", v21, instanceOf(ExpressionNumLit.class));
+		IToken v22 = ((ExpressionNumLit) v21).firstToken;
+		assertEquals("0", String.valueOf(v22.getText()));
+		IToken v23 = ((ExpressionBinary) v18).op;
+		assertEquals("=", String.valueOf(v23.getText()));
+		Statement v24 = ((StatementIf) v16.get(1)).statement;
+		assertThat("", v24, instanceOf(StatementOutput.class));
+		Expression v25 = ((StatementOutput) v24).expression;
+		assertThat("", v25, instanceOf(ExpressionIdent.class));
+		IToken v26 = ((ExpressionIdent) v25).firstToken;
+		assertEquals("y", String.valueOf(v26.getText()));
+		
+		
+	}
+	
+	@Test
+	void ctest2() throws PLPException {
+		String input = """
+				PROCEDURE x;
+				        CALL x;
+				PROCEDURE y;
+				        !x;
+				PROCEDURE z;
+				        VAR y,z;
+				;
+				.
+				""";
+		ASTNode ast = getAST(input);
+		assertThat("", ast, instanceOf(Program.class));
+		Block v0 = ((Program) ast).block;
+		assertThat("", v0, instanceOf(Block.class));
+		List<ConstDec> v1 = ((Block) v0).constDecs;
+		assertEquals(0, v1.size());
+		List<VarDec> v2 = ((Block) v0).varDecs;
+		assertEquals(0, v2.size());
+		List<ProcDec> v3 = ((Block) v0).procedureDecs;
+		assertEquals(3, v3.size());
+		
+		assertThat("", v3.get(0), instanceOf(ProcDec.class));
+		IToken v9 = ((ProcDec) v3.get(0)).ident;
+		assertEquals("x", String.valueOf(v9.getText()));
+		Block v10 = ((ProcDec) v3.get(0)).block;
+		assertThat("", v10, instanceOf(Block.class));
+		List<ConstDec> v11 = ((Block) v10).constDecs;
+		assertEquals(0, v11.size());
+		List<VarDec> v12 = ((Block) v10).varDecs;
+		assertEquals(0, v12.size());
+		List<ProcDec> v13 = ((Block) v10).procedureDecs;
+		assertEquals(0, v13.size());
+		Statement s = ((Block) v10).statement;
+		assertThat("", s, instanceOf(StatementCall.class));
+		Ident v6 = ((StatementCall) s).ident;
+		assertEquals("x", String.valueOf(v6.getText()));
+		
+		
+		assertThat("", v3.get(1), instanceOf(ProcDec.class));
+		v9 = ((ProcDec) v3.get(1)).ident;
+		assertEquals("y", String.valueOf(v9.getText()));
+		v10 = ((ProcDec) v3.get(1)).block;
+		assertThat("", v10, instanceOf(Block.class));
+		v11 = ((Block) v10).constDecs;
+		assertEquals(0, v11.size());
+		v12 = ((Block) v10).varDecs;
+		assertEquals(0, v12.size());
+		v13 = ((Block) v10).procedureDecs;
+		assertEquals(0, v13.size());
+		s = ((Block) v10).statement;
+		assertThat("", s, instanceOf(StatementOutput.class));
+		Expression v7 = ((StatementOutput) s).expression;
+		assertThat("", v7, instanceOf(ExpressionIdent.class));
+		IToken v26 = ((ExpressionIdent) v7).firstToken;
+		assertEquals("x", String.valueOf(v26.getText()));
+		
+		assertThat("", v3.get(2), instanceOf(ProcDec.class));
+		v9 = ((ProcDec) v3.get(2)).ident;
+		assertEquals("z", String.valueOf(v9.getText()));
+		v10 = ((ProcDec) v3.get(2)).block;
+		assertThat("", v10, instanceOf(Block.class));
+		v11 = ((Block) v10).constDecs;
+		assertEquals(0, v11.size());
+		v12 = ((Block) v10).varDecs;
+		assertEquals(2, v12.size());
+		assertThat("", v12.get(0), instanceOf(VarDec.class));
+		IToken v5 = ((VarDec) v12.get(0)).ident;
+		assertEquals("y", String.valueOf(v5.getText()));
+		assertThat("", v12.get(1), instanceOf(VarDec.class));
+		IToken v98 = ((VarDec) v12.get(1)).ident;
+		assertEquals("z", String.valueOf(v98.getText()));
+		v13 = ((Block) v10).procedureDecs;
+		assertEquals(0, v13.size());
+		s = ((Block) v10).statement;
+		assertThat("", s, instanceOf(StatementEmpty.class));
+		
+		s = ((Block) v0).statement;
+		assertThat("", s, instanceOf(StatementEmpty.class));
+		
+		
+	}
+	
+	@Test
+	void ctest3() throws PLPException {
+		String input = """
+				VAR y,z;
+				VAR w,x;
+				VAR a,b;
+				.
+				""";
+		ASTNode ast = getAST(input);
+		assertThat("", ast, instanceOf(Program.class));
+		Block v0 = ((Program) ast).block;
+		assertThat("", v0, instanceOf(Block.class));
+		
+		List<ConstDec> v1 = ((Block) v0).constDecs;
+		assertEquals(0, v1.size());
+		List<VarDec> v2 = ((Block) v0).varDecs;
+		assertEquals(6, v2.size());
+		
+		assertThat("", v2.get(0), instanceOf(VarDec.class));
+		IToken v5 = ((VarDec) v2.get(0)).ident;
+		assertEquals("y", String.valueOf(v5.getText()));
+		
+		assertThat("", v2.get(1), instanceOf(VarDec.class));
+		v5 = ((VarDec) v2.get(1)).ident;
+		assertEquals("z", String.valueOf(v5.getText()));
+		
+		assertThat("", v2.get(2), instanceOf(VarDec.class));
+		v5 = ((VarDec) v2.get(2)).ident;
+		assertEquals("w", String.valueOf(v5.getText()));
+		
+		assertThat("", v2.get(3), instanceOf(VarDec.class));
+		v5 = ((VarDec) v2.get(3)).ident;
+		assertEquals("x", String.valueOf(v5.getText()));
+		
+		assertThat("", v2.get(4), instanceOf(VarDec.class));
+		v5 = ((VarDec) v2.get(4)).ident;
+		assertEquals("a", String.valueOf(v5.getText()));
+		
+		assertThat("", v2.get(5), instanceOf(VarDec.class));
+		v5 = ((VarDec) v2.get(5)).ident;
+		assertEquals("b", String.valueOf(v5.getText()));
+		
+		List<ProcDec> v3 = ((Block) v0).procedureDecs;
+		assertEquals(0, v3.size());
+		
+		Statement s = ((Block) v0).statement;
+		assertThat("", s, instanceOf(StatementEmpty.class));
+	}
+	
+	@Test
+	void ctest4() throws PLPException {
+		String input = """
+				CONST y=4; CONST abc="STRING"; CONST NUMBER=TRUE;
+				.
+				""";
+		ASTNode ast = getAST(input);
+		assertThat("", ast, instanceOf(Program.class));
+		Block v0 = ((Program) ast).block;
+		assertThat("", v0, instanceOf(Block.class));
+		
+		List<ConstDec> v1 = ((Block) v0).constDecs;
+		assertEquals(3, v1.size());
+		
+		assertThat("", v1.get(0), instanceOf(ConstDec.class));
+		IToken v12 = ((ConstDec) v1.get(0)).ident;
+		assertEquals("y", String.valueOf(v12.getText()));
+		Integer v13 = (Integer) ((ConstDec) v1.get(0)).val;
+		assertEquals(4, v13);
+		
+		assertThat("", v1.get(1), instanceOf(ConstDec.class));
+		v12 = ((ConstDec) v1.get(1)).ident;
+		assertEquals("abc", String.valueOf(v12.getText()));
+		String v113 = (String) ((ConstDec) v1.get(1)).val;
+		assertEquals("STRING", v113);
+		
+		assertThat("", v1.get(2), instanceOf(ConstDec.class));
+		v12 = ((ConstDec) v1.get(2)).ident;
+		assertEquals("NUMBER", String.valueOf(v12.getText()));
+		Boolean v123 = (Boolean) ((ConstDec) v1.get(2)).val;
+		assertEquals(true, v123);
+		
+		List<VarDec> v2 = ((Block) v0).varDecs;
+		assertEquals(0, v2.size());
+		List<ProcDec> v3 = ((Block) v0).procedureDecs;
+		assertEquals(0, v3.size());
+		Statement s = ((Block) v0).statement;
+		assertThat("", s, instanceOf(StatementEmpty.class));
+	}
+	
+	@Test
+	void ctest5() throws PLPException {
+		String input = """
+				PROCEDURE X;
+				        PROCEDURE Y;
+				                PROCEDURE Z;
+				                        CALL XYZ;
+				        ;
+				;
+				.
+				""";
+		ASTNode ast = getAST(input);
+		assertThat("", ast, instanceOf(Program.class));
+		Block v0 = ((Program) ast).block;
+		assertThat("", v0, instanceOf(Block.class));
+		List<ConstDec> v1 = ((Block) v0).constDecs;
+		assertEquals(0, v1.size());
+		List<VarDec> v2 = ((Block) v0).varDecs;
+		assertEquals(0, v2.size());
+		List<ProcDec> v3 = ((Block) v0).procedureDecs;
+		assertEquals(1, v3.size());		
+		Statement s = ((Block) v0).statement;
+		assertThat("", s, instanceOf(StatementEmpty.class));
+		
+		assertThat("", v3.get(0), instanceOf(ProcDec.class));
+		IToken v9 = ((ProcDec) v3.get(0)).ident;
+		assertEquals("X", String.valueOf(v9.getText()));
+		Block v10 = ((ProcDec)v3.get(0)).block;
+		assertThat("", v10, instanceOf(Block.class));
+		List<ConstDec> v11 = ((Block) v10).constDecs;
+		assertEquals(0, v11.size());
+		List<VarDec> v12 = ((Block) v10).varDecs;
+		assertEquals(0, v12.size());
+		List<ProcDec> v13 = ((Block) v10).procedureDecs;
+		assertEquals(1, v13.size());		
+		s = ((Block) v10).statement;
+		assertThat("", s, instanceOf(StatementEmpty.class));
+		
+		assertThat("", v13.get(0), instanceOf(ProcDec.class));
+		IToken v19 = ((ProcDec) v13.get(0)).ident;
+		assertEquals("Y", String.valueOf(v19.getText()));
+		Block v110 = ((ProcDec) v13.get(0)).block;
+		assertThat("", v110, instanceOf(Block.class));
+		List<ConstDec> v111 = ((Block) v110).constDecs;
+		assertEquals(0, v111.size());
+		List<VarDec> v112 = ((Block) v110).varDecs;
+		assertEquals(0, v112.size());
+		List<ProcDec> v113 = ((Block) v110).procedureDecs;
+		assertEquals(1, v113.size());		
+		s = ((Block) v110).statement;
+		assertThat("", s, instanceOf(StatementEmpty.class));
+		
+		assertThat("", v113.get(0), instanceOf(ProcDec.class));
+		IToken v119 = ((ProcDec) v113.get(0)).ident;
+		assertEquals("Z", String.valueOf(v119.getText()));
+		Block v1110 = ((ProcDec) v113.get(0)).block;
+		assertThat("", v1110, instanceOf(Block.class));
+		List<ConstDec> v1111 = ((Block) v1110).constDecs;
+		assertEquals(0, v1111.size());
+		List<VarDec> v1112 = ((Block) v1110).varDecs;
+		assertEquals(0, v1112.size());
+		List<ProcDec> v1113 = ((Block) v1110).procedureDecs;
+		assertEquals(0, v1113.size());		
+		s = ((Block) v1110).statement;
+		assertThat("", s, instanceOf(StatementCall.class));
+		Ident v6 = ((StatementCall) s).ident;
+		assertEquals("XYZ", String.valueOf(v6.getText()));
+		
+	}
 }

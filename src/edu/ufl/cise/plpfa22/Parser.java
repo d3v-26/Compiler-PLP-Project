@@ -132,6 +132,9 @@ public class Parser implements IParser {
 				while(isKind(this.lexer.peek(), Kind.SEMI))
 				{					
 					consume();
+					if(this.lexer.peek().getKind() == Kind.KW_END) {
+						break;
+					}
 					Statement nextStatement = Stmt();
 					stmt.add(nextStatement);
 				}
@@ -155,7 +158,9 @@ public class Parser implements IParser {
 				Statement stmt = Stmt();
 				s = new StatementWhile(firstToken, e, stmt);
 			}
-			//handle 'null case' left to be implemented
+			case SEMI -> {
+				s = new StatementEmpty(firstToken);
+			}
 			case DOT -> {
 				s = new StatementEmpty(firstToken);
 			}
@@ -184,8 +189,8 @@ public class Parser implements IParser {
 		// TODO Auto-generated method stub
 		List<VarDec> v = new ArrayList<VarDec>();
 		IToken firstToken = this.lexer.peek();
-		if(isKind(firstToken, Kind.KW_VAR)) {
-			consume();
+		while(isKind(this.lexer.peek(), Kind.KW_VAR)) {
+			firstToken = match(Kind.KW_VAR);
 			IToken id = match(Kind.IDENT);
 			v.add(new VarDec(firstToken, id));
 			while(isKind(this.lexer.peek(), Kind.COMMA)) {
@@ -202,8 +207,8 @@ public class Parser implements IParser {
 		// TODO Auto-generated method stub
 		List<ConstDec> c = new ArrayList<ConstDec>();
 		IToken firstToken = this.lexer.peek();
-		if(isKind(firstToken, Kind.KW_CONST)) {
-			consume();
+		while(isKind(this.lexer.peek(), Kind.KW_CONST)) {
+			firstToken = match(Kind.KW_CONST);
 			IToken id = match(Kind.IDENT);
 			match(Kind.EQ);
 			Expression const_val = ConstantValue();

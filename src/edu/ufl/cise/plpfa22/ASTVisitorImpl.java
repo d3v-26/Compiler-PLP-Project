@@ -52,50 +52,23 @@ public class ASTVisitorImpl implements ASTVisitor {
 		this.symbolTable.enterScope();
 		
 		for(ConstDec c : block.constDecs) {
-			visitConstDec(c, arg);
+			c.visit(this, arg);
 		}
 		
 		for(VarDec v : block.varDecs) {
-			visitVarDec(v, arg);
+			v.visit(this, arg);
 		}
 		
 		for(ProcDec p : block.procedureDecs) {
-			visitProcedure(p, arg);
+			p.visit(this, arg);
 		}
 		
 		for(ProcDec p : block.procedureDecs) {
-			visitBlock(p.block, arg);
+			p.block.visit(this, arg);
 		}
 		
-		switch(block.statement.firstToken.getKind()) {					
-			case IDENT -> {
-				visitStatementAssign((StatementAssign)block.statement, arg);
-			}
-			case KW_CALL -> {
-				visitStatementCall((StatementCall)block.statement, arg);
-			}
-			case QUESTION -> {
-				visitStatementInput((StatementInput)block.statement, arg);
-			}
-			case BANG -> {
-				visitStatementOutput((StatementOutput)block.statement, arg);
-			}
-			case KW_BEGIN -> {
-				visitStatementBlock((StatementBlock)block.statement, arg);
-			}
-			case KW_IF -> {
-				visitStatementIf((StatementIf)block.statement, arg);
-			}
-			case KW_WHILE -> {
-				visitStatementWhile((StatementWhile)block.statement, arg);
-			}
-			case DOT, SEMI ->{
-				visitStatementEmpty((StatementEmpty)block.statement, arg);
-			}
-			default -> {
-				throw new SyntaxException();
-			}
-		}
+		block.statement.visit(this, arg);
+		
 		this.symbolTable.leaveScope();
 		return null;
 	}
@@ -103,14 +76,14 @@ public class ASTVisitorImpl implements ASTVisitor {
 	@Override
 	public Object visitProgram(Program program, Object arg) throws PLPException {
 		// TODO Auto-generated method stub
-		visitBlock(program.block, arg);
+		program.block.visit(this, arg);
 		return null;
 	}
 
 	@Override
 	public Object visitStatementAssign(StatementAssign statementAssign, Object arg) throws PLPException {
 		// TODO Auto-generated method stub
-		visitIdent(statementAssign.ident, arg);
+		statementAssign.ident.visit(this, arg);
 		statementAssign.expression.visit(this, arg);
 		return null;
 	}
@@ -127,14 +100,14 @@ public class ASTVisitorImpl implements ASTVisitor {
 	@Override
 	public Object visitStatementCall(StatementCall statementCall, Object arg) throws PLPException {
 		// TODO Auto-generated method stub
-		visitIdent(statementCall.ident, arg);
+		statementCall.ident.visit(this, arg);
 		return null;
 	}
 
 	@Override
 	public Object visitStatementInput(StatementInput statementInput, Object arg) throws PLPException {
 		// TODO Auto-generated method stub
-		visitIdent(statementInput.ident, arg);
+		statementInput.ident.visit(this, arg);
 		return null;
 	}
 

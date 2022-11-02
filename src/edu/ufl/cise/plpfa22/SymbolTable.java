@@ -1,5 +1,7 @@
 package edu.ufl.cise.plpfa22;
 import edu.ufl.cise.plpfa22.ast.Declaration;
+import edu.ufl.cise.plpfa22.ast.Types.Type;
+
 import java.util.HashMap;
 import java.util.ListIterator;
 import java.util.Stack;
@@ -48,6 +50,7 @@ public class SymbolTable {
 	public Declaration lookUp(String ident){
 		if(!symbolTable.containsKey(ident))
 			return null;
+		//System.out.println("In here");
 		HashMap<Integer, Declaration> map = symbolTable.get(ident);
 		ListIterator<Integer> listIterator = scopeStack.listIterator(scopeStack.size());
 		while(listIterator.hasPrevious()) {
@@ -57,6 +60,21 @@ public class SymbolTable {
 			}
 		}
 		return null;
+	}
+	
+	public boolean updateDec(String ident, Type t) {
+		if(!symbolTable.containsKey(ident))
+			return false;
+		HashMap<Integer, Declaration> map = symbolTable.get(ident);
+		ListIterator<Integer> listIterator = scopeStack.listIterator(scopeStack.size());
+		while(listIterator.hasPrevious()) {
+			int key = listIterator.previous();
+			if(map.containsKey(key)) {
+				map.get(key).setType(t);
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	public Declaration lookupinscope(String ident, int scope) {

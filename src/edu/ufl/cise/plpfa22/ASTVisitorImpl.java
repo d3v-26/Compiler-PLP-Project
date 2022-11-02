@@ -50,7 +50,7 @@ public class ASTVisitorImpl implements ASTVisitor {
 	public Object visitBlock(Block block, Object arg) throws PLPException {
 		// TODO Auto-generated method stub
 		this.symbolTable.enterScope();
-		
+		System.out.println("In ast");
 		for(ConstDec c : block.constDecs) {
 			c.visit(this, arg);
 		}
@@ -161,6 +161,7 @@ public class ASTVisitorImpl implements ASTVisitor {
 			throw new ScopeException(String.valueOf(id.getText()));
 		}
 		expressionIdent.setDec(d);
+		expressionIdent.setType(d.getType());
 		return null;
 	}
 
@@ -200,6 +201,17 @@ public class ASTVisitorImpl implements ASTVisitor {
 		// TODO Auto-generated method stub
 		checkNotDecIdent(String.valueOf(constDec.ident.getText()));
 		constDec.setNest(this.symbolTable.scopeStack.peek());
+		Object val = constDec.val;
+		if((val instanceof String)) {
+			constDec.setType(Type.STRING);
+		}
+		else if(String.valueOf(val) == "true" || String.valueOf(val) == "false") {
+			constDec.setType(Type.BOOLEAN);
+		}
+		else {
+			constDec.setType(Type.NUMBER);
+		}
+		
 		this.symbolTable.insert(String.valueOf(constDec.ident.getText()), constDec);
 		return null;
 	}

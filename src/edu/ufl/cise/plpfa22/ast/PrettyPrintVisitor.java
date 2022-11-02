@@ -21,7 +21,7 @@ public static String AST2String(ASTNode ast) throws PLPException {
 		static String indent = "";
 		
 		public PPVStringBuilder(String indent){
-			this.indent=indent;
+			PPVStringBuilder.indent=indent;
 		}
 
 		StringBuilder sb = new StringBuilder();

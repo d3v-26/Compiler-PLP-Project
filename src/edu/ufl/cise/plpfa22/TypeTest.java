@@ -565,6 +565,260 @@ class TypeTest {
 				""";
 		runTest(input,testInfo);
 	}
+	@Test
+	void ss_testProcedureAssignment(TestInfo testInfo) {
+	   String input = """
+	           PROCEDURE A;
+	           ;
+	                 PROCEDURE B;
+	                 ;
+	                 A := B  //Cannot assign procedure to another
+	                 .
+	                 """;
+	   runTest(input, testInfo, TypeCheckException.class);
+
+	}
+
+
+	@Test
+	void ss_testAssignIntToString(TestInfo testInfo) {
+	   String input = """
+	           VAR x;
+	           BEGIN
+	           x:= 5;
+	           x:= "test"
+	           END
+	           .
+	           """;
+	   runTest(input, testInfo, TypeCheckException.class);
+	}
+
+	@Test
+	void ss_testInferType(TestInfo testInfo) throws PLPException {
+	   String input = """
+	           VAR x, y, z;
+	           BEGIN
+	           y := 1;
+	           z := FALSE;
+	           ! (x = y) * z // Inferred type of x
+	           END
+	           .
+	           """;
+	   runTest(input, testInfo);
+
+	}
+
+	@Test
+	void ss_testCannotInferType(TestInfo testInfo) throws PLPException {
+	   String input = """
+	           VAR x, y, z;
+	           BEGIN
+	           z := FALSE;
+	           ! (x = y) * z
+	           END
+	           .
+	           """;
+	   runTest(input, testInfo, TypeCheckException.class);
+
+	}
+
+	@Test
+	void ss_testIncorrectAssignmentComparison(TestInfo testInfo) throws PLPException {
+	   String input = """
+	           VAR x, y, z;
+	           BEGIN
+	           x := 10;
+	           y := "hello";
+	           z := FALSE;
+	           ! (x = y) * z
+	           END
+	           .
+	           """;
+	   runTest(input, testInfo, TypeCheckException.class);
+	}
+
+	@Test
+	void ss_testIncorrectGuardCondition(TestInfo testInfo) throws PLPException {
+	   String input = """
+	           VAR x, y, z;
+	           BEGIN
+	           x := 10;
+	           y := "hello";
+	           z := FALSE;
+	           IF y THEN ! y ;
+	           END
+	           .
+	           """;
+	   runTest(input, testInfo, TypeCheckException.class);
+	}
+
+	@Test
+	void ss_testIncorrectWhileGuardCondition(TestInfo testInfo) throws PLPException {
+	   String input = """
+	           CONST x = 5;
+	           BEGIN
+	               WHILE x
+	               DO
+	               !x;
+	           END
+	           .
+	           """;
+	   runTest(input, testInfo, TypeCheckException.class);
+	}
+
+
+
+	@Test
+	void ss_testIncorrectTypeAfterAssign(TestInfo testInfo) throws PLPException {
+	   String input = """
+	           VAR x, y, z;
+	           BEGIN
+	           x := 10;
+	           z := FALSE;
+	           ! (x = y) * z; //Type error
+	           y := "hello"
+	           END
+	           .
+	           """;
+	   runTest(input, testInfo, TypeCheckException.class);
+	}
+
+	@Test
+	   void inputToConst(TestInfo testInfo) throws PLPException{
+	       String input = """
+	        CONST e = 5;
+	        ? e
+	        .
+	        """;
+	       runTest(input,testInfo, TypeCheckException.class);
+	   }
+
+	@Test
+	void nithin0_test(TestInfo testInfo) throws PLPException {
+	   String input = """
+	           CONST a="hello", b =1, c=TRUE;
+	           CONST d=0;
+	           VAR x,y,z;
+	           BEGIN
+	           !y;
+	           x := a;
+	           y := x+y+z;
+	           //z := 0
+	           END
+	           .
+	           """;
+	   runTest(input, testInfo);
+	}
+
+	@Test
+	void nithin1_test(TestInfo testInfo) throws PLPException {
+	   String input = """
+	           CONST a="hello", b =1, c=TRUE;
+	           CONST d=0;
+	           VAR x,y,z;
+	           BEGIN
+	           !y;
+	           x := a;
+	           y := x+y+z;
+	           z := 0  //type not compatible
+	           END
+	           .
+	           """;
+	runTest(input, testInfo, TypeCheckException .class);
+	}
+
+	@Test
+	void nithin2_test(TestInfo testInfo) throws PLPException {
+	   String input = """
+	           CONST a="hello", b =1, c=TRUE;
+	           CONST d=FALSE;
+	           VAR x,y,z;
+	           BEGIN
+	           ! ((x=y)=d) * z;  //x, y cannot be inferred
+	           z := TRUE
+	           END
+	           .
+	           """;
+	   runTest(input, testInfo, TypeCheckException .class);
+	}
+
+	@Test
+	void nithin3_test(TestInfo testInfo) throws PLPException {
+	   String input = """
+	           CONST a="hello", b=1, c=TRUE;
+	           CONST d=FALSE;
+	           VAR x,y,z;
+	           PROCEDURE e;
+	               VAR x;   //creating a new local variable to replace global x
+	               PROCEDURE f;
+	               x:=4   //type assigned to this local variable
+	               ;
+	           CALL f
+	           ;
+	           BEGIN
+	           CALL e;
+	           ! ((x=y)=d) * z;  //x, y cannot be inferred
+	           z := TRUE
+	           END
+	           .
+	           """;
+	   runTest(input, testInfo, TypeCheckException .class);
+	}
+
+	@Test
+	void nithin4_test(TestInfo testInfo) throws PLPException {
+	   String input = """
+	           CONST a="hello", b=1, c=TRUE;
+	           CONST d=FALSE;
+	           VAR x,y,z;
+	           PROCEDURE e;
+	               //VAR x;      no new variable declared
+	               PROCEDURE f;
+	               x:=4          //Inferring the type of the global variable in this scope
+	               ;
+	           CALL f
+	           ;
+	           BEGIN
+	           CALL e;
+	           ! ((x=y)=d) * z;  //x, y can be inferred
+	           z := TRUE
+	           END
+	           .
+	           """;
+	   runTest(input, testInfo);
+	}
+
+	@Test
+	void nithin5_test(TestInfo testInfo) throws PLPException {
+	   String input = """
+	           CONST a="hello", b=1, c=TRUE;
+	           CONST d=FALSE;
+	           VAR x,y,z;
+	           PROCEDURE e;
+	           ;
+	           BEGIN
+	           CALL e;
+	           CALL x
+	           END
+	           .
+	           """;
+	   runTest(input, testInfo, TypeCheckException .class);
+	}
+
+	@Test
+	    void error_reassignVar(TestInfo testInfo) throws PLPException{
+	    String input = """
+	            VAR x;
+	            BEGIN
+	            x:=5;
+	            x:="test"    // we are not allowed to reassign a var to a different type
+	            END
+	            .
+	            """;
+	    runTest(input,testInfo, TypeCheckException.class);
+	}
+
+
 }
 
 

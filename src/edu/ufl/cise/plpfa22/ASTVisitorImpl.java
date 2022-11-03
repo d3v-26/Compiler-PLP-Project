@@ -50,7 +50,6 @@ public class ASTVisitorImpl implements ASTVisitor {
 	public Object visitBlock(Block block, Object arg) throws PLPException {
 		// TODO Auto-generated method stub
 		this.symbolTable.enterScope();
-		System.out.println("In ast");
 		for(ConstDec c : block.constDecs) {
 			c.visit(this, arg);
 		}

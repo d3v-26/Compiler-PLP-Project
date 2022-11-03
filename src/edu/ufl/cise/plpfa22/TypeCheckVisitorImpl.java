@@ -527,7 +527,7 @@ public class TypeCheckVisitorImpl implements ASTVisitor {
 			changes += 1;
 		}
 		else if(d.getType() == null && id != null) {
-			System.out.println("update: "+this.symbolTable.updateDec(var, id));
+			this.symbolTable.updateDec(var, id);
 			changes += 1;
 		}
 		else {

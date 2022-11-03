@@ -417,73 +417,125 @@ public class TypeCheckVisitorImpl implements ASTVisitor {
 	@Override
 	public Object visitExpressionIdent(ExpressionIdent expressionIdent, Object arg) throws PLPException {
 		// TODO Auto-generated method stub
-		IToken id = expressionIdent.firstToken;
-		expressionIdent.setNest(this.symbolTable.scopeStack.peek());
-		Declaration d = this.symbolTable.lookUp(String.valueOf(id.getText()));
-		if (d == null) {
-			throw new ScopeException(String.valueOf(id.getText()));
+		int changes = 0;
+		String var = String.valueOf(expressionIdent.firstToken.getText());
+		Declaration d = this.symbolTable.lookUp(var);
+		if(d == null) return 0;
+		Type id = d.getType();
+		Type exp = expressionIdent.getType();
+		if(id == null && exp == null) {
+			changes += 0;
 		}
-		expressionIdent.setDec(d);
-		return null;
+		else if(id != null && exp == null) {
+			changes += 1;
+			expressionIdent.setType(id);
+			expressionIdent.setDec(d);
+		}
+		else if(id == null && exp != null) {
+			changes += 1;
+			boolean t = this.symbolTable.updateDec(var, exp);
+		}
+		else {
+			if (id != exp) throw new TypeCheckException();
+			changes += 0;
+		}
+		h.get(this.symbolTable.scopeStack.peek()).add(var);
+		return changes;
 	}
 
 	@Override
 	public Object visitExpressionNumLit(ExpressionNumLit expressionNumLit, Object arg) throws PLPException {
 		// TODO Auto-generated method stub
-		expressionNumLit.setType(Type.NUMBER);
-		return expressionNumLit.firstToken.getIntValue();
+		if(expressionNumLit.getType() != Type.NUMBER) {
+			throw new TypeCheckException();
+		}
+		return 0;
 	}
 
 	@Override
 	public Object visitExpressionStringLit(ExpressionStringLit expressionStringLit, Object arg) throws PLPException {
 		// TODO Auto-generated method stub
-		expressionStringLit.setType(Type.STRING);
-		return expressionStringLit.firstToken.getStringValue();
+		if(expressionStringLit.getType() != Type.STRING) {
+			throw new TypeCheckException();
+		}
+		return 0;
 	}
 
 	@Override
 	public Object visitExpressionBooleanLit(ExpressionBooleanLit expressionBooleanLit, Object arg) throws PLPException {
 		// TODO Auto-generated method stub
-		expressionBooleanLit.setType(Type.BOOLEAN);
-		return expressionBooleanLit.firstToken.getBooleanValue();
+		if(expressionBooleanLit.getType() != Type.BOOLEAN) {
+			throw new TypeCheckException();
+		}
+		return 0;
 	}
 
 	@Override
 	public Object visitProcedure(ProcDec procDec, Object arg) throws PLPException {
 		// TODO Auto-generated method stub
-		checkNotDecIdent(String.valueOf(procDec.ident.getText()));
-		procDec.setNest(this.symbolTable.scopeStack.peek());
-		procDec.setType(Type.PROCEDURE);
-		this.symbolTable.insert(String.valueOf(procDec.ident.getText()), procDec);
-		return null;
+		if(procDec.getType() != Type.PROCEDURE) {
+			throw new TypeCheckException();
+		}
+		Declaration d = new ProcDec(null, null, null);
+		d.setType(Type.PROCEDURE);
+		d.setNest(procDec.getNest());
+		this.symbolTable.insert(String.valueOf(procDec.ident.getText()), d);
+		return 0;
 	}
 
 	@Override
 	public Object visitConstDec(ConstDec constDec, Object arg) throws PLPException {
 		// TODO Auto-generated method stub
-		checkNotDecIdent(String.valueOf(constDec.ident.getText()));
-		constDec.setNest(this.symbolTable.scopeStack.peek());
+		Type c = constDec.getType();
+		Type v = null;
+		Object val = constDec.val;
+		if(val instanceof String) v = Type.STRING;
+		else {
+			String ibval = String.valueOf(val);
+			if(ibval == "true" || ibval == "false") {
+				v = Type.BOOLEAN;
+			}
+			else {
+				v = Type.NUMBER;
+			}
+		}
+		if(v != c) {
+			throw new TypeCheckException();
+		}
 		this.symbolTable.insert(String.valueOf(constDec.ident.getText()), constDec);
-		return null;
+		return 0;
 	}
 
 	@Override
 	public Object visitStatementEmpty(StatementEmpty statementEmpty, Object arg) throws PLPException {
 		// TODO Auto-generated method stub
-		return null;
+		return 0;
 	}
 
 	@Override
 	public Object visitIdent(Ident ident, Object arg) throws PLPException {
 		// TODO Auto-generated method stub
-		checkDecIdent(String.valueOf(ident.firstToken.getText()));
-		ident.setNest(this.symbolTable.scopeStack.peek());
-		Declaration d = this.symbolTable.lookUp(String.valueOf(ident.getText()));
-		if (d == null) {
-			throw new ScopeException(String.valueOf(ident.getText()));
+		int changes = 0;
+		Type id = ident.getDec().getType();
+		String var = String.valueOf(ident.getText());
+		Declaration d = this.symbolTable.lookUp(var);
+		if(d.getType() == null && id == null) {
+			changes += 0;
 		}
-		ident.setDec(d);
-		return null;
+		else if(d.getType() != null && id == null) {
+			ident.setDec(d);
+			changes += 1;
+		}
+		else if(d.getType() == null && id != null) {
+			System.out.println("update: "+this.symbolTable.updateDec(var, id));
+			changes += 1;
+		}
+		else {
+			if(d.getType() != id) throw new TypeCheckException();
+			changes += 0;
+		}
+		h.get(this.symbolTable.scopeStack.peek()).add(var);
+		return changes;
 	}
 
 }

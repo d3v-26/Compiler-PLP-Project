@@ -49,27 +49,46 @@ public class TypeCheckVisitorImpl implements ASTVisitor {
 	public Object visitBlock(Block block, Object arg) throws PLPException {
 		// TODO Auto-generated method stub
 		this.symbolTable.enterScope();
+		int currScope = this.symbolTable.scopeStack.peek();
+		List<String> vars = new ArrayList<String>();
+		h.put(currScope, vars);
+		
+		int changes = 0;
 		
 		for(ConstDec c : block.constDecs) {
 			c.visit(this, arg);
-		}
-		
+		}	
 		for(VarDec v : block.varDecs) {
 			v.visit(this, arg);
 		}
-		
 		for(ProcDec p : block.procedureDecs) {
 			p.visit(this, arg);
 		}
 		
 		for(ProcDec p : block.procedureDecs) {
-			p.block.visit(this, arg);
+			int c;
+			do {
+				c = (Integer) p.block.visit(this, arg);
+				changes += c;
+			}
+			while(c > 0);
 		}
+		int c;
+		do {
+			c = (Integer) block.statement.visit(this, arg);
+			changes += c;
+		}
+		while(c > 0);
 		
-		block.statement.visit(this, arg);
-		
+		for(String s : h.get(currScope)) {
+			Declaration d = this.symbolTable.lookUp(s);
+			if(d.getType() == null) {
+				throw new TypeCheckException();
+			}
+		}
+		h.remove(currScope);		
 		this.symbolTable.leaveScope();
-		return null;
+		return changes;
 	}
 
 	@Override
@@ -79,75 +98,313 @@ public class TypeCheckVisitorImpl implements ASTVisitor {
 		return null;
 	}
 
+	
 	@Override
 	public Object visitStatementAssign(StatementAssign statementAssign, Object arg) throws PLPException {
 		// TODO Auto-generated method stub
-		statementAssign.ident.visit(this, arg);
-		statementAssign.expression.visit(this, arg);
-		return null;
+		int changes = 0;
+		changes += (Integer)statementAssign.ident.visit(this, arg);
+		changes += (Integer)statementAssign.expression.visit(this, arg);
+		Type ident = statementAssign.ident.getDec().getType();
+		Type expr = statementAssign.expression.getType();
+		if(ident != null && expr != null) {
+			if(ident != expr) throw new TypeCheckException();
+			if(ident == Type.PROCEDURE) throw new TypeCheckException();
+			if(statementAssign.ident.getDec() instanceof ConstDec) throw new TypeCheckException();
+		}
+		else if(ident == null && expr == null) {
+			changes += 0;
+		}
+		else if(ident != null && expr == null) {
+			if(statementAssign.ident.getDec() instanceof ConstDec) throw new TypeCheckException();
+			statementAssign.expression.setType(ident);
+			changes += 1;
+		}
+		else if(ident == null && expr != null) {
+			statementAssign.ident.getDec().setType(expr);
+			Declaration d = this.symbolTable.lookUp(String.valueOf(statementAssign.ident.getText()));
+			if(d != null) this.symbolTable.updateDec(String.valueOf(statementAssign.ident.getText()), expr);			
+			changes += 1;
+		}
+		return changes;
 	}
 
 	@Override
 	public Object visitVarDec(VarDec varDec, Object arg) throws PLPException {
 		// TODO Auto-generated method stub
-		checkNotDecIdent(String.valueOf(varDec.ident.getText()));
-		varDec.setNest(this.symbolTable.scopeStack.peek());
 		this.symbolTable.insert(String.valueOf(varDec.ident.getText()), varDec);
-		return null;
+		return 0;
 	}
 
 	@Override
 	public Object visitStatementCall(StatementCall statementCall, Object arg) throws PLPException {
 		// TODO Auto-generated method stub
-		statementCall.ident.visit(this, arg);
-		return null;
+		int changes = (Integer)statementCall.ident.visit(this, arg);
+		if(statementCall.ident.getDec().getType() != Type.PROCEDURE) {
+			throw new TypeCheckException();
+		}
+		return changes;
 	}
 
 	@Override
 	public Object visitStatementInput(StatementInput statementInput, Object arg) throws PLPException {
 		// TODO Auto-generated method stub
-		statementInput.ident.visit(this, arg);
-		return null;
+		int changes = (Integer)statementInput.ident.visit(this, arg);
+		Type inptype = statementInput.ident.getDec().getType();	
+		Type inpstype = this.symbolTable.lookUp(String.valueOf(statementInput.ident.getText())).getType();
+		if((statementInput.ident.getDec() instanceof ConstDec)) throw new TypeCheckException();
+		if(inptype == Type.PROCEDURE || inpstype == Type.PROCEDURE) {
+			throw new TypeCheckException();
+		}
+		return changes;
 	}
 
 	@Override
 	public Object visitStatementOutput(StatementOutput statementOutput, Object arg) throws PLPException {
 		// TODO Auto-generated method stub
-		statementOutput.expression.visit(this, arg);
-		return null;
+		int changes = (Integer)statementOutput.expression.visit(this, arg);
+		Type exptype = statementOutput.expression.getType();		
+		if(exptype == Type.PROCEDURE) {
+			throw new TypeCheckException();
+		}
+		return changes;
 	}
 
 	@Override
 	public Object visitStatementBlock(StatementBlock statementBlock, Object arg) throws PLPException {
 		// TODO Auto-generated method stub
+		int changes = 0;
 		for(Statement s : statementBlock.statements) {
-			s.visit(this, arg);
+			changes += (Integer) s.visit(this, arg);
 		}
-		return null;
+		return changes;
 	}
 
 	@Override
 	public Object visitStatementIf(StatementIf statementIf, Object arg) throws PLPException {
 		// TODO Auto-generated method stub
-		statementIf.expression.visit(this, arg);
-		statementIf.statement.visit(this, arg);
-		return null;
+		int changes1 = (Integer)statementIf.expression.visit(this, arg);
+		if(statementIf.expression.getType() != Type.BOOLEAN) {
+			throw new TypeCheckException();
+		}
+		int changes2 = (Integer)statementIf.statement.visit(this, arg);
+		return changes1+changes2;
 	}
 
 	@Override
 	public Object visitStatementWhile(StatementWhile statementWhile, Object arg) throws PLPException {
 		// TODO Auto-generated method stub
-		statementWhile.expression.visit(this, arg);
-		statementWhile.statement.visit(this, arg);
-		return null;
+		int changes1 = (Integer)statementWhile.expression.visit(this, arg);
+		if(statementWhile.expression.getType() != Type.BOOLEAN) {
+			throw new TypeCheckException();
+		}
+		int changes2 = (Integer)statementWhile.statement.visit(this, arg);
+		return changes1 + changes2;
 	}
 
 	@Override
 	public Object visitExpressionBinary(ExpressionBinary expressionBinary, Object arg) throws PLPException {
 		// TODO Auto-generated method stub
-		expressionBinary.e0.visit(this, arg);
-		expressionBinary.e1.visit(this, arg);
-		return null;
+		int changes = 0;
+		changes += (Integer)expressionBinary.e0.visit(this, arg);
+		Type e0 = expressionBinary.e0.getType();
+		
+		changes += (Integer)expressionBinary.e1.visit(this, arg);
+		Type e1 = expressionBinary.e1.getType();
+		
+		Kind op = expressionBinary.op.getKind();
+		
+		switch(op) {
+			case PLUS -> {
+				if(expressionBinary.getType() != null) {
+					if(expressionBinary.getType() == Type.PROCEDURE) throw new TypeCheckException();
+					if ( e1 != null && e0 != null) {
+						if(expressionBinary.getType() != e0 && e0 != e1) throw new TypeCheckException();
+						changes += 0;
+					}
+					else if(e0 != null && e1 == null) {
+						if( e0 != expressionBinary.getType()) throw new TypeCheckException();
+						expressionBinary.e1.setType(expressionBinary.getType());
+						changes += 1;
+					}
+					else if(e0 == null && e1 != null) {
+						if( e1 != expressionBinary.getType()) throw new TypeCheckException();
+						expressionBinary.e0.setType(expressionBinary.getType());
+						changes += 1;
+					}
+					else {
+						expressionBinary.e0.setType(expressionBinary.getType());
+						expressionBinary.e1.setType(expressionBinary.getType());
+						changes += 2;
+					}
+				}
+				else {
+					if ( e1 != null && e0 != null) {
+						if(e1 != e0) throw new TypeCheckException();
+						if(e0 == Type.PROCEDURE) throw new TypeCheckException();
+						expressionBinary.setType(e1);
+						changes += 1;
+					}
+					else if(e0 != null && e1 == null) {
+						if(e0 == Type.PROCEDURE) throw new TypeCheckException();
+						expressionBinary.setType(e0);
+						expressionBinary.e1.setType(e0);
+						changes += 2;
+					}
+					else if(e0 == null && e1 != null) {
+						if(e1 == Type.PROCEDURE) throw new TypeCheckException();
+						expressionBinary.setType(e1);
+						expressionBinary.e0.setType(e1);
+						changes += 2;
+					}
+					else {
+						changes += 0;
+					}
+				}
+			}
+			case MINUS, DIV, MOD -> {
+				if(expressionBinary.getType() != null) {
+					if(expressionBinary.getType() != Type.NUMBER) throw new TypeCheckException();
+					if ( e1 != null && e0 != null) {
+						if(expressionBinary.getType() != e0 && e0 != e1) throw new TypeCheckException();
+						changes += 0;
+					}
+					else if(e0 != null && e1 == null) {
+						if( e0 != expressionBinary.getType()) throw new TypeCheckException();
+						expressionBinary.e1.setType(expressionBinary.getType());
+						changes += 1;
+					}
+					else if(e0 == null && e1 != null) {
+						if( e1 != expressionBinary.getType()) throw new TypeCheckException();
+						expressionBinary.e0.setType(expressionBinary.getType());
+						changes += 1;
+					}
+					else {
+						expressionBinary.e0.setType(expressionBinary.getType());
+						expressionBinary.e1.setType(expressionBinary.getType());
+						changes += 2;
+					}
+				}
+				else {
+					if ( e1 != null && e0 != null) {
+						if(e1 != e0) throw new TypeCheckException();
+						if(e0 != Type.NUMBER) throw new TypeCheckException();
+						expressionBinary.setType(e1);
+						changes += 1;
+					}
+					else if(e0 != null && e1 == null) {
+						if(e0 != Type.NUMBER) throw new TypeCheckException();
+						expressionBinary.setType(e0);
+						expressionBinary.e1.setType(e0);
+						changes += 2;
+					}
+					else if(e0 == null && e1 != null) {
+						if(e1 != Type.NUMBER) throw new TypeCheckException();
+						expressionBinary.setType(e1);
+						expressionBinary.e0.setType(e1);
+						changes += 2;
+					}
+					else {
+						changes += 0;
+					}
+				}
+			}
+			case TIMES -> {
+				if(expressionBinary.getType() != null) {
+					if(expressionBinary.getType() != Type.NUMBER && expressionBinary.getType() != Type.BOOLEAN) throw new TypeCheckException();
+					if ( e1 != null && e0 != null) {
+						if(expressionBinary.getType() != e0 && e0 != e1) throw new TypeCheckException();
+						changes += 0;
+					}
+					else if(e0 != null && e1 == null) {
+						if( e0 != expressionBinary.getType()) throw new TypeCheckException();
+						expressionBinary.e1.setType(expressionBinary.getType());
+						changes += 1;
+					}
+					else if(e0 == null && e1 != null) {
+						if( e1 != expressionBinary.getType()) throw new TypeCheckException();
+						expressionBinary.e0.setType(expressionBinary.getType());
+						changes += 1;
+					}
+					else {
+						expressionBinary.e0.setType(expressionBinary.getType());
+						expressionBinary.e1.setType(expressionBinary.getType());
+						changes += 2;
+					}
+				}
+				else {
+					if ( e1 != null && e0 != null) {
+						if(e1 != e0) throw new TypeCheckException();
+						if(e0 != Type.NUMBER && e0 != Type.BOOLEAN) throw new TypeCheckException();
+						expressionBinary.setType(e1);
+						changes += 1;
+					}
+					else if(e0 != null && e1 == null) {
+						if(e0 != Type.NUMBER && e0 != Type.BOOLEAN) throw new TypeCheckException();
+						expressionBinary.setType(e0);
+						expressionBinary.e1.setType(e0);
+						changes += 2;
+					}
+					else if(e0 == null && e1 != null) {
+						if(e1 != Type.NUMBER && e1 != Type.BOOLEAN) throw new TypeCheckException();
+						expressionBinary.setType(e1);
+						expressionBinary.e0.setType(e1);
+						changes += 2;
+					}
+					else {
+						changes += 0;
+					}
+				}
+			}
+			case EQ, NEQ, LT, LE, GT, GE -> {
+				if(expressionBinary.getType() != null) {
+					if(expressionBinary.getType() != Type.BOOLEAN) throw new TypeCheckException();
+					if ( e1 != null && e0 != null) {
+						if(e1 != e0) throw new TypeCheckException();
+						if(e0 == Type.PROCEDURE) throw new TypeCheckException();						
+						changes += 0;
+					}
+					else if(e0 != null && e1 == null) {
+						if(e0 == Type.PROCEDURE) throw new TypeCheckException();
+						expressionBinary.e1.setType(e0);
+						changes += 1;
+					}
+					else if(e0 == null && e1 != null) {
+						if(e1 == Type.PROCEDURE) throw new TypeCheckException();
+						expressionBinary.e0.setType(e1);
+						changes += 1;
+					}
+					else {
+						changes += 0;
+					}
+				}
+				else {
+					if ( e1 != null && e0 != null) {						
+						if(e1 != e0) throw new TypeCheckException();
+						if(e0 == Type.PROCEDURE) throw new TypeCheckException();						
+						changes += 0;
+					}
+					else if(e0 != null && e1 == null) {
+						if(e0 == Type.PROCEDURE) throw new TypeCheckException();
+						expressionBinary.e1.setType(e0);
+						changes += 1;
+					}
+					else if(e0 == null && e1 != null) {
+						if(e1 == Type.PROCEDURE) throw new TypeCheckException();
+						expressionBinary.e0.setType(e1);
+						changes += 1;
+					}
+					else {
+						changes += 0;
+					}
+					expressionBinary.setType(Type.BOOLEAN);
+					changes += 1;
+				}
+			}
+			default->throw new SyntaxException();
+			
+		}
+		return changes;
 	}
 
 	@Override

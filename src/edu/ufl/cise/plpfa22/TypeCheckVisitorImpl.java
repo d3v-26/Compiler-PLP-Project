@@ -1,5 +1,10 @@
 package edu.ufl.cise.plpfa22;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
+import edu.ufl.cise.plpfa22.IToken.Kind;
 import edu.ufl.cise.plpfa22.ast.ASTVisitor;
 import edu.ufl.cise.plpfa22.ast.Block;
 import edu.ufl.cise.plpfa22.ast.ConstDec;
@@ -27,10 +32,12 @@ import edu.ufl.cise.plpfa22.ast.VarDec;
 public class TypeCheckVisitorImpl implements ASTVisitor {
 	
 	SymbolTable symbolTable;
+	HashMap<Integer, List<String>> h;
 	
 	public TypeCheckVisitorImpl() {
 		super();
 		symbolTable = new SymbolTable();
+		h = new HashMap<Integer, List<String>>();
 	}
 	
 	public void checkDecIdent(String id) throws ScopeException {

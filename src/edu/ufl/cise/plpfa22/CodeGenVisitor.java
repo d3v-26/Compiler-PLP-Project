@@ -37,7 +37,6 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 	final String classDesc;
 	
 	ClassWriter classWriter;
-
 	
 	public CodeGenVisitor(String className, String packageName, String sourceFileName) {
 		super();
@@ -47,7 +46,7 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 		this.fullyQualifiedClassName = packageName + "/" + className;
 		this.classDesc="L"+this.fullyQualifiedClassName+';';
 	}
-
+	
 	public void comparisonInstructions(MethodVisitor mv, int opcode)
 	{
 		Label labelComparisonFalseBr = new Label();
@@ -58,6 +57,29 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 		mv.visitLabel(labelComparisonFalseBr);
 		mv.visitInsn(ICONST_0); // bool false
 		mv.visitLabel(labelPostComparison);
+	}
+	
+	public void stringComparisonInstructions(MethodVisitor mv, int opcode, String method)
+	{
+		mv.visitVarInsn(ASTORE, 1); // Store the first string
+		mv.visitVarInsn(ASTORE, 2); // Store the next string
+		
+		// Load both strings
+		mv.visitVarInsn(ALOAD, 2); 
+		mv.visitVarInsn(ALOAD, 1);
+		
+		if("startsWith".equals(method)) mv.visitInsn(SWAP);
+		
+		mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", method, "(Ljava/lang/String;)Z", false);
+		
+		// Load both strings
+		mv.visitVarInsn(ALOAD, 2); 
+		mv.visitVarInsn(ALOAD, 1);
+		mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals", "(Ljava/lang/Object;)Z", false);
+		
+		if(opcode == IAND) comparisonInstructions(mv, IFNE);
+		
+		mv.visitInsn(opcode);
 	}
 
 	@Override
@@ -136,15 +158,22 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 
 	@Override
 	public Object visitStatementBlock(StatementBlock statementBlock, Object arg) throws PLPException {
-		for (Statement statement : statementBlock.statements) {
-			statement.visit(this, arg);
+		for(Statement s : statementBlock.statements) {
+			s.visit(this, arg);
 		}
 		return null;
 	}
 
 	@Override
 	public Object visitStatementIf(StatementIf statementIf, Object arg) throws PLPException {
-		throw new UnsupportedOperationException();
+		MethodVisitor mv = (MethodVisitor)arg;
+		statementIf.expression.visit(this, arg);
+		Label labelComparisonFalseBr = new Label();
+		mv.visitJumpInsn(IFEQ, labelComparisonFalseBr);
+		
+		statementIf.statement.visit(this, arg);
+		mv.visitLabel(labelComparisonFalseBr);
+		return null;
 	}
 
 	@Override
@@ -157,94 +186,57 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 		MethodVisitor mv = (MethodVisitor) arg;
 		Type argType = expressionBinary.e0.getType();
 		Kind op = expressionBinary.op.getKind();
-		IToken e1=expressionBinary.e1.firstToken;
-		IToken e0=expressionBinary.e0.firstToken;
+		if(argType != Type.NUMBER && argType != Type.BOOLEAN && argType != Type.STRING) throw new IllegalStateException("code gen bug in visitExpressionBinary");
+		expressionBinary.e0.visit(this, arg);
+		expressionBinary.e1.visit(this, arg);
 		switch (argType) {
-		case NUMBER -> {
-			switch (op) {
-				case PLUS -> mv.visitInsn(IADD);
-				case MINUS -> mv.visitInsn(ISUB);
-				case TIMES -> mv.visitInsn(IMUL);
-				case DIV -> mv.visitInsn(IDIV);
-				case MOD -> mv.visitInsn(IREM);
-				case EQ -> comparisonInstructions(mv, IF_ICMPNE);
-				case NEQ -> comparisonInstructions(mv, IF_ICMPEQ);
-				case LT -> comparisonInstructions(mv, IF_ICMPGE);
-				case LE -> comparisonInstructions(mv, IF_ICMPGT);
-				case GT -> comparisonInstructions(mv, IF_ICMPLE);
-				case GE -> comparisonInstructions(mv, IF_ICMPLT);
-				default ->throw new IllegalStateException("code gen bug in visitExpressionBinary NUMBER");
-			};
-		}
-		case BOOLEAN -> {
-//			implementation of TRUE = TRUE AND FALSE=FALSE is not done.
-			if(expressionBinary.e0.getFirstToken().getBooleanValue() != expressionBinary.e1.getFirstToken().getBooleanValue())
-			{
-				if(op == Kind.GT && e0.getBooleanValue()==Boolean.TRUE) {
-					mv.visitLdcInsn(e0.getBooleanValue());
-				}
-				else if(op==Kind.LT && e1.getBooleanValue()==Boolean.TRUE) {
-					mv.visitLdcInsn(e1.getBooleanValue());
-				}
-				else if(op==Kind.NEQ)
-				{
-					mv.visitLdcInsn(Boolean.TRUE);
-				}
-				else if(op==Kind.GE && e0.getBooleanValue()==Boolean.TRUE)
-				{
-					mv.visitLdcInsn(Boolean.TRUE);
-				}
-				else if(op==Kind.LE && e1.getBooleanValue()==Boolean.TRUE)
-				{
-					mv.visitLdcInsn(Boolean.TRUE);
-				}
-				else {
-					mv.visitLdcInsn(Boolean.FALSE);
-				}
+			case NUMBER -> {
+				switch (op) {
+					case PLUS -> mv.visitInsn(IADD);
+					case MINUS -> mv.visitInsn(ISUB);
+					case TIMES -> mv.visitInsn(IMUL);
+					case DIV -> mv.visitInsn(IDIV);
+					case MOD -> mv.visitInsn(IREM);
+					case EQ -> comparisonInstructions(mv, IF_ICMPNE);
+					case NEQ -> comparisonInstructions(mv, IF_ICMPEQ);
+					case LT -> comparisonInstructions(mv, IF_ICMPGE);
+					case LE -> comparisonInstructions(mv, IF_ICMPGT);
+					case GT -> comparisonInstructions(mv, IF_ICMPLE);
+					case GE -> comparisonInstructions(mv, IF_ICMPLT);
+					default ->throw new IllegalStateException("code gen bug in visitExpressionBinary NUMBER");
+				};
 			}
-			else {
-				if(op == Kind.EQ || op == Kind.GE || op == Kind.LE) {
-					mv.visitLdcInsn(Boolean.TRUE);
-				}
-				else {
-					mv.visitLdcInsn(Boolean.FALSE);
-				}
+			case BOOLEAN -> {
+				switch (op) {
+					case PLUS -> mv.visitInsn(IOR);
+					case TIMES -> mv.visitInsn(IAND);
+					case EQ -> comparisonInstructions(mv, IF_ICMPNE);
+					case NEQ -> comparisonInstructions(mv, IF_ICMPEQ);
+					case LT -> comparisonInstructions(mv, IF_ICMPGE);
+					case LE -> comparisonInstructions(mv, IF_ICMPGT);
+					case GT -> comparisonInstructions(mv, IF_ICMPLE);
+					case GE -> comparisonInstructions(mv, IF_ICMPLT);
+					default ->throw new IllegalStateException("code gen bug in visitExpressionBinary BOOLEAN");
+				};
 			}
-			
-			return null;
-		}
-		case STRING -> {
-			switch (op) {
-			case EQ -> {
-				mv.visitLdcInsn(expressionBinary.e1.firstToken.getStringValue().equals(expressionBinary.e0.firstToken.getStringValue()));
-
-			}
-			case NEQ ->{
-				mv.visitLdcInsn(!expressionBinary.e1.firstToken.getStringValue().equals(expressionBinary.e0.firstToken.getStringValue()));
-			}
-			case LT -> {
-				mv.visitLdcInsn(expressionBinary.e1.firstToken.getStringValue().startsWith(expressionBinary.e0.firstToken.getStringValue())&& 
-						!expressionBinary.e1.firstToken.getStringValue().equals((expressionBinary.e0.firstToken.getStringValue())));
-			}
-			case LE -> {
-				mv.visitLdcInsn(expressionBinary.e1.firstToken.getStringValue().startsWith(expressionBinary.e0.firstToken.getStringValue()));
-			}
-			case GT -> {
-				mv.visitLdcInsn(expressionBinary.e0.firstToken.getStringValue().endsWith(expressionBinary.e1.firstToken.getStringValue())&& 
-						!expressionBinary.e1.firstToken.getStringValue().equals(expressionBinary.e0.firstToken.getStringValue()));
-			}
-			case GE -> {
-				mv.visitLdcInsn(expressionBinary.e0.firstToken.getStringValue().endsWith(expressionBinary.e1.firstToken.getStringValue()));
+			case STRING -> {
+				switch (op) {
+					case PLUS -> mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "concat", "(Ljava/lang/String;)Ljava/lang/String;", false);
+					case EQ -> mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals", "(Ljava/lang/Object;)Z", false);
+					case NEQ -> {
+						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals", "(Ljava/lang/Object;)Z", false);
+						comparisonInstructions(mv, IFNE);
+					}
+					case LT -> stringComparisonInstructions(mv, IAND, "startsWith");
+					case LE -> stringComparisonInstructions(mv, IOR,  "startsWith");
+					case GT -> stringComparisonInstructions(mv, IAND, "endsWith");
+					case GE -> stringComparisonInstructions(mv, IOR,  "endsWith");
+					default ->throw new IllegalStateException("code gen bug in visitExpressionBinary STRING");
+				};
 			}
 			default -> {
-				throw new IllegalStateException("code gen bug in visitExpressionBinary STRING");
+				throw new IllegalStateException("code gen bug in visitExpressionBinary");
 			}
-			}
-			;
-		}
-		default -> {
-			throw new IllegalStateException("code gen bug in visitExpressionBinary");
-		}
 		}
 		return null;
 	}
@@ -294,5 +286,5 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 	public Object visitIdent(Ident ident, Object arg) throws PLPException {
 		throw new UnsupportedOperationException();
 	}
-	
+
 }

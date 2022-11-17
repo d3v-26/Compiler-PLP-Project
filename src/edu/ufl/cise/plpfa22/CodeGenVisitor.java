@@ -342,5 +342,19 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 	public Object visitIdent(Ident ident, Object arg) throws PLPException {
 		throw new UnsupportedOperationException();
 	}
+	// have to give the opcode of the opposite compare instruction of the comparison that we want to do because the opposite compare instruction would be used to branch to a false condition
+	// i.e. if evaluation of OPCODE instruction is true then sets false otherwise sets true
+	public void generateInstForComp(MethodVisitor mv, int OPCODE) {
+		Label labelCompFalseBr = new Label();
+		mv.visitJumpInsn(OPCODE, labelCompFalseBr);
+		// corresponds to boolean true
+		mv.visitInsn(ICONST_1);
+		Label labelPostComp = new Label();
+		mv.visitJumpInsn(GOTO, labelPostComp);
+		mv.visitLabel(labelCompFalseBr);
+		// corresponds to boolean false
+		mv.visitInsn(ICONST_0);
+		mv.visitLabel(labelPostComp);
+	}
 
 }

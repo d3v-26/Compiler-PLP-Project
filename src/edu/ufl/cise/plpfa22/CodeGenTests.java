@@ -691,15 +691,15 @@ public class CodeGenTests {
 @Test
 public void stringAndBooleanMath(TestInfo testInfo) throws Exception {
    String input = """
-BEGIN
-! "Red" + "Blue";
-! FALSE * FALSE;  
-! FALSE * TRUE;   
-! FALSE + FALSE;  
-! FALSE + TRUE;   
-END
-.
-""";
+		BEGIN
+		! "Red" + "Blue";
+		! FALSE * FALSE;  
+		! FALSE * TRUE;   
+		! FALSE + FALSE;  
+		! FALSE + TRUE;   
+		END
+		.
+		""";
 
    String shortClassName = "prog";
    String JVMpackageName = "edu/ufl/cise/plpfa22";
@@ -712,12 +712,12 @@ END
    System.setErr(new PrintStream(errContent));
    loadClassAndRunMethod(bytecode, className, "main", args);
    String expected = """
-RedBlue
-false
-false
-false
-true
-""";
+		RedBlue
+		false
+		false
+		false
+		true
+		""";
    assertEquals(expected, outContent.toString().replaceAll("\\r\\n?", "\n"));
    System.setOut(originalOut);
    System.setErr(originalErr);

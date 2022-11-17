@@ -48,6 +48,18 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 		this.classDesc="L"+this.fullyQualifiedClassName+';';
 	}
 
+	public void comparisonInstructions(MethodVisitor mv, int opcode)
+	{
+		Label labelComparisonFalseBr = new Label();
+		mv.visitJumpInsn(opcode, labelComparisonFalseBr);
+		mv.visitInsn(ICONST_1); // bool true
+		Label labelPostComparison = new Label();
+		mv.visitJumpInsn(GOTO, labelPostComparison);
+		mv.visitLabel(labelComparisonFalseBr);
+		mv.visitInsn(ICONST_0); // bool false
+		mv.visitLabel(labelPostComparison);
+	}
+
 	@Override
 	public Object visitBlock(Block block, Object arg) throws PLPException {
 		MethodVisitor methodVisitor = (MethodVisitor)arg;
@@ -149,23 +161,20 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 		IToken e0=expressionBinary.e0.firstToken;
 		switch (argType) {
 		case NUMBER -> {
-			expressionBinary.e0.visit(this, arg);
-			expressionBinary.e1.visit(this, arg);
-			// all operations are defined for number
 			switch (op) {
 				case PLUS -> mv.visitInsn(IADD);
 				case MINUS -> mv.visitInsn(ISUB);
 				case TIMES -> mv.visitInsn(IMUL);
 				case DIV -> mv.visitInsn(IDIV);
 				case MOD -> mv.visitInsn(IREM);
-				case EQ -> generateInstForComp(mv, IF_ICMPNE);
-				case NEQ -> generateInstForComp(mv, IF_ICMPEQ);
-				case LT -> generateInstForComp(mv, IF_ICMPGE);
-				case LE -> generateInstForComp(mv, IF_ICMPGT);
-				case GT -> generateInstForComp(mv, IF_ICMPLE);
-				case GE -> generateInstForComp(mv, IF_ICMPLT);
-				default -> throw new IllegalStateException("code gen bug in visitExpressionBinary NUMBER");
-			}
+				case EQ -> comparisonInstructions(mv, IF_ICMPNE);
+				case NEQ -> comparisonInstructions(mv, IF_ICMPEQ);
+				case LT -> comparisonInstructions(mv, IF_ICMPGE);
+				case LE -> comparisonInstructions(mv, IF_ICMPGT);
+				case GT -> comparisonInstructions(mv, IF_ICMPLE);
+				case GE -> comparisonInstructions(mv, IF_ICMPLT);
+				default ->throw new IllegalStateException("code gen bug in visitExpressionBinary NUMBER");
+			};
 		}
 		case BOOLEAN -> {
 //			implementation of TRUE = TRUE AND FALSE=FALSE is not done.
@@ -285,19 +294,5 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 	public Object visitIdent(Ident ident, Object arg) throws PLPException {
 		throw new UnsupportedOperationException();
 	}
-	// have to give the opcode of the opposite compare instruction of the comparison that we want to do because the opposite compare instruction would be used to branch to a false condition
-	// i.e. if evaluation of OPCODE instruction is true then sets false otherwise sets true
-	public void generateInstForComp(MethodVisitor mv, int OPCODE) {
-		Label labelCompFalseBr = new Label();
-		mv.visitJumpInsn(OPCODE, labelCompFalseBr);
-		// corresponds to boolean true
-		mv.visitInsn(ICONST_1);
-		Label labelPostComp = new Label();
-		mv.visitJumpInsn(GOTO, labelPostComp);
-		mv.visitLabel(labelCompFalseBr);
-		// corresponds to boolean false
-		mv.visitInsn(ICONST_0);
-		mv.visitLabel(labelPostComp);
-	}
-
+	
 }

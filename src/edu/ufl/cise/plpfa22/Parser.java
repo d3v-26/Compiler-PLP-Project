@@ -158,10 +158,7 @@ public class Parser implements IParser {
 				Statement stmt = Stmt();
 				s = new StatementWhile(firstToken, e, stmt);
 			}
-			case SEMI -> {
-				s = new StatementEmpty(firstToken);
-			}
-			case DOT -> {
+			case SEMI, DOT, KW_END -> {
 				s = new StatementEmpty(firstToken);
 			}
 			default -> {

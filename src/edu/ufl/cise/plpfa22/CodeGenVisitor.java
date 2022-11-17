@@ -151,78 +151,21 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 		case NUMBER -> {
 			expressionBinary.e0.visit(this, arg);
 			expressionBinary.e1.visit(this, arg);
+			// all operations are defined for number
 			switch (op) {
-			case PLUS -> mv.visitInsn(IADD);
-			case MINUS -> mv.visitInsn(ISUB);
-			case TIMES -> mv.visitInsn(IMUL);
-			case DIV -> mv.visitInsn(IDIV);
-			case MOD -> mv.visitInsn(IREM);
-			case EQ -> {
-				Label labelNumEqFalseBr = new Label();
-				mv.visitJumpInsn(IF_ICMPNE, labelNumEqFalseBr);
-				mv.visitInsn(ICONST_1);
-				Label labelPostNumEq = new Label();
-				mv.visitJumpInsn(GOTO, labelPostNumEq);
-				mv.visitLabel(labelNumEqFalseBr);
-				mv.visitInsn(ICONST_0);
-				mv.visitLabel(labelPostNumEq);
+				case PLUS -> mv.visitInsn(IADD);
+				case MINUS -> mv.visitInsn(ISUB);
+				case TIMES -> mv.visitInsn(IMUL);
+				case DIV -> mv.visitInsn(IDIV);
+				case MOD -> mv.visitInsn(IREM);
+				case EQ -> generateInstForComp(mv, IF_ICMPNE);
+				case NEQ -> generateInstForComp(mv, IF_ICMPEQ);
+				case LT -> generateInstForComp(mv, IF_ICMPGE);
+				case LE -> generateInstForComp(mv, IF_ICMPGT);
+				case GT -> generateInstForComp(mv, IF_ICMPLE);
+				case GE -> generateInstForComp(mv, IF_ICMPLT);
+				default -> throw new IllegalStateException("code gen bug in visitExpressionBinary NUMBER");
 			}
-			case NEQ -> {
-				Label labelNumEqFalseBr = new Label();
-				mv.visitJumpInsn(IF_ICMPEQ , labelNumEqFalseBr);
-				mv.visitInsn(ICONST_1);
-				Label labelPostNumEq = new Label();
-				mv.visitJumpInsn(GOTO, labelPostNumEq);
-				mv.visitLabel(labelNumEqFalseBr);
-				mv.visitInsn(ICONST_0);
-				mv.visitLabel(labelPostNumEq);
-			}
-			case LT -> {
-				Label labelNumEqFalseBr = new Label();
-				mv.visitJumpInsn(IF_ICMPGE  , labelNumEqFalseBr);
-				mv.visitInsn(ICONST_1);
-				Label labelPostNumEq = new Label();
-				mv.visitJumpInsn(GOTO, labelPostNumEq);
-				mv.visitLabel(labelNumEqFalseBr);
-				mv.visitInsn(ICONST_0);
-				mv.visitLabel(labelPostNumEq);
-			}
-			case LE -> {
-				
-				Label labelNumEqFalseBr = new Label();
-				mv.visitJumpInsn(IF_ICMPGT  , labelNumEqFalseBr);
-				mv.visitInsn(ICONST_1);
-				Label labelPostNumEq = new Label();
-				mv.visitJumpInsn(GOTO, labelPostNumEq);
-				mv.visitLabel(labelNumEqFalseBr);
-				mv.visitInsn(ICONST_0);
-				mv.visitLabel(labelPostNumEq);
-			}
-			case GT -> {
-				Label labelNumEqFalseBr = new Label();
-				mv.visitJumpInsn(IF_ICMPLE  , labelNumEqFalseBr);
-				mv.visitInsn(ICONST_1);
-				Label labelPostNumEq = new Label();
-				mv.visitJumpInsn(GOTO, labelPostNumEq);
-				mv.visitLabel(labelNumEqFalseBr);
-				mv.visitInsn(ICONST_0);
-				mv.visitLabel(labelPostNumEq);
-			}
-			case GE -> {
-				Label labelNumEqFalseBr = new Label();
-				mv.visitJumpInsn(IF_ICMPLT  , labelNumEqFalseBr);
-				mv.visitInsn(ICONST_1);
-				Label labelPostNumEq = new Label();
-				mv.visitJumpInsn(GOTO, labelPostNumEq);
-				mv.visitLabel(labelNumEqFalseBr);
-				mv.visitInsn(ICONST_0);
-				mv.visitLabel(labelPostNumEq);
-			}
-			default -> {
-				throw new IllegalStateException("code gen bug in visitExpressionBinary NUMBER");
-			}
-			}
-			;
 		}
 		case BOOLEAN -> {
 //			implementation of TRUE = TRUE AND FALSE=FALSE is not done.

@@ -1,13 +1,20 @@
 package edu.ufl.cise.plpfa22;
 
+import java.lang.reflect.Parameter;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import edu.ufl.cise.plpfa22.ast.ASTVisitor;
+import edu.ufl.cise.plpfa22.CodeGenUtils.GenClass;
 import edu.ufl.cise.plpfa22.IToken.Kind;
 import edu.ufl.cise.plpfa22.ast.Block;
 import edu.ufl.cise.plpfa22.ast.ConstDec;
+import edu.ufl.cise.plpfa22.ast.Declaration;
 import edu.ufl.cise.plpfa22.ast.ExpressionBinary;
 import edu.ufl.cise.plpfa22.ast.ExpressionBooleanLit;
 import edu.ufl.cise.plpfa22.ast.ExpressionIdent;
@@ -106,27 +113,50 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 
 	@Override
 	public Object visitProgram(Program program, Object arg) throws PLPException {
-		//create a classWriter and visit it
+		
+		List<String> classNames = new ArrayList<String>();
+		
+		// Creates ClassWriter for main class
 		classWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
-		//Hint:  if you get failures in the visitMaxs, try creating a ClassWriter with 0
-		// instead of ClassWriter.COMPUTE_FRAMES.  The result will not be a valid classfile,
-		// but you will be able to print it so you can see the instructions.  After fixing,
-		// restore ClassWriter.COMPUTE_FRAMES
-		classWriter.visit(V18, ACC_PUBLIC | ACC_SUPER, fullyQualifiedClassName, null, "java/lang/Object", null);
-
-		//get a method visitor for the main method.		
-		MethodVisitor methodVisitor = classWriter.visitMethod(ACC_PUBLIC | ACC_STATIC, "main", "([Ljava/lang/String;)V", null, null);
-		//visit the block, passing it the methodVisitor
-		program.block.visit(this, methodVisitor);
+		classWriter.visit(V18, ACC_PUBLIC | ACC_SUPER, fullyQualifiedClassName, null, "java/lang/Object", new String[] { "java/lang/Runnable" });
+		
+		// Invokes a simple ASTVisitor to visit all procedure declarations and annotate them with their JVM names
+			// Incomplete.
+			// Simple AStVisitor = new ASTVisitor()
+			// ast.visit(ASTVisitor, String[] names);
+			// List<String> classNames = ast.visit(new CCF.ASTVisitorImpl(), fullyQualifiedClassName);
+		// End
+		
+		// Passes Class Writer to Block visit
+		program.block.visit(this, classWriter);
 		//finish up the class
         classWriter.visitEnd();
+        
+        // Other Bookkeeping Details
+        // ???
+        
+        List<GenClass> genClasses = new ArrayList<GenClass>();
+        
         //return the bytes making up the classfile
 		return classWriter.toByteArray();
+		
+		// return List<GenClass>
+		// For el in className:
+		// 		genClasses.push(el, byte_code_for_el);
+		
+		
+		// Return genClasses.
+		
 	}
 
 	@Override
 	public Object visitStatementAssign(StatementAssign statementAssign, Object arg) throws PLPException {
-		throw new UnsupportedOperationException();
+		
+		statementAssign.expression.visit(this, arg);	//	visit the expression
+		
+		statementAssign.ident.visit(this, arg);			//	visit the ident
+		
+		return null;
 	}
 
 	@Override
@@ -136,7 +166,29 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 
 	@Override
 	public Object visitStatementCall(StatementCall statementCall, Object arg) throws PLPException {
-		throw new UnsupportedOperationException();
+		
+		MethodVisitor mv = (MethodVisitor)arg;
+		
+		// Creates ClassWriter for given class
+		classWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+		
+		String className = fullyQualifiedClassName;
+		
+		try {
+			mv.visitVarInsn(ALOAD, 0);
+			// concat full name behind classname i.e. + "$" + statementCall.ident	
+		}
+		finally{
+			// itereate list of all procedure names to find out enclosing procedure
+			// concat full name behind classname i.e. + "$" + statementCall.ident	
+		}
+		
+		classWriter.visit(V18, ACC_PUBLIC | ACC_SUPER, className , "<init>", "java/lang/Object", new String[] { "java/lang/Runnable" });
+		
+		//finish up the class
+		classWriter.visitEnd();
+		
+		return null;
 	}
 
 	@Override
@@ -170,7 +222,7 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 		statementIf.expression.visit(this, arg);
 		Label labelComparisonFalseBr = new Label();
 		mv.visitJumpInsn(IFEQ, labelComparisonFalseBr);
-		
+
 		statementIf.statement.visit(this, arg);
 		mv.visitLabel(labelComparisonFalseBr);
 		return null;
@@ -178,7 +230,26 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 
 	@Override
 	public Object visitStatementWhile(StatementWhile statementWhile, Object arg) throws PLPException {
-		throw new UnsupportedOperationException();
+		//	created according to official format
+		MethodVisitor mv = (MethodVisitor)arg;
+		
+		Label GuardLabel = new Label();						//      declarations of labels
+		Label BodyLabel = new Label();
+		
+		mv.visitJumpInsn(GOTO, GuardLabel);					//		GOTO GuardLabel
+
+		mv.visitLabel(BodyLabel);							//		BodyLabel
+		
+		statementWhile.statement.visit(this, arg);			//		visit Loop body  
+
+		mv.visitLabel(GuardLabel);    						//		GuardLabel
+
+		statementWhile.expression.visit(this, arg);         //		Evaluate guard expression
+
+		mv.visitJumpInsn(IFNE, BodyLabel);					//		IFNE BodyLabel
+		
+		// 	ref : visit local variables in block
+		return null;
 	}
 
 	@Override
@@ -243,7 +314,45 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 
 	@Override
 	public Object visitExpressionIdent(ExpressionIdent expressionIdent, Object arg) throws PLPException {
-		throw new UnsupportedOperationException();
+		
+		MethodVisitor mv = (MethodVisitor)arg;
+		
+		Declaration declaration = expressionIdent.getDec();
+		
+		if (declaration instanceof VARIABLE) {			// VARIABLE NEEDS TO BE REPLACED
+			
+			switch(declaration.getType())
+			{
+			
+			case NUMBER:
+				mv.visitVarInsn(ALOAD, 0);
+                mv.visitFieldInsn(GETFIELD, className, declaration.firstToken.getStringValue(), "I");
+                break;
+                
+			case BOOLEAN:
+				mv.visitVarInsn(ALOAD, 0);
+                mv.visitFieldInsn(GETFIELD, className, declaration.firstToken.getStringValue(), "Z");
+                break;
+            
+			case STRING:
+				mv.visitVarInsn(ALOAD, 0);
+                mv.visitFieldInsn(GETFIELD, className, declaration.firstToken.getStringValue(), "Ljava/lang/String;");
+                break;
+				
+			default:
+				throw new RuntimeException("Not a valid Identifier");
+			
+			}
+		}
+		
+		else {
+			
+			mv.visitVarInsn(ILOAD, declaration.getNest());		// if variable is constant, just load the value
+			
+		}
+	
+		
+		return null;
 	}
 
 	@Override
@@ -269,12 +378,33 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 
 	@Override
 	public Object visitProcedure(ProcDec procDec, Object arg) throws PLPException {
-		throw new UnsupportedOperationException();
+		// get Current class name	edu/ufl/cise/plpfa22/prog
+		String className = fullyQualifiedClassName;
+		
+		// Append procDec.procedure name
+		// New class name edu/ufl/cise/plpfa22/prog$p
+		className.concat(procDec.ident.getStringValue());
+		
+		
+		// Creates ClassWriter for given class
+		classWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+		
+		//add field for reference to enclosing class (this$n where n is nesting level)      // IMPLEMENTATION REQUIRED
+		
+		//create init method that takes an instance of enclosing class as parameter and initializes this$n,then invokes superclass constructor (java/lang/Object).
+		classWriter.visit(V18, ACC_PUBLIC | ACC_SUPER, className, "<init>", "java/lang/Object", new String[] { "java/lang/Runnable" });
+		
+		//Visit block to create run method  // visitBlock(Block);							// IMPLEMENTATION REQUIRED
+		
+		// Pop current proc name
+		// New class name edu/ufl/cise/plpfa22/prog
+		
+		return null;
 	}
 
 	@Override
 	public Object visitConstDec(ConstDec constDec, Object arg) throws PLPException {
-		throw new UnsupportedOperationException();
+		return null;
 	}
 
 	@Override
@@ -284,7 +414,49 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 
 	@Override
 	public Object visitIdent(Ident ident, Object arg) throws PLPException {
-		throw new UnsupportedOperationException();
+//		Declaration declaration= ident.getDec();
+//		
+		MethodVisitor mv = (MethodVisitor)arg;
+//		
+//		
+//		
+//		if (declaration instanceof VARIABLE) {			// VARIABLE NEEDS TO BE REPLACED
+//			
+//			switch(declaration.getType())
+//			{
+//			
+//			case NUMBER:
+//				mv.visitVarInsn(ALOAD, 0);
+//                mv.visitFieldInsn(GETFIELD, className, declaration.firstToken.getStringValue(), "I");
+//                break;
+//                
+//			case BOOLEAN:
+//				mv.visitVarInsn(ALOAD, 0);
+//                mv.visitFieldInsn(GETFIELD, className, declaration.firstToken.getStringValue(), "Z");
+//                break;
+//            
+//			case STRING:
+//				mv.visitVarInsn(ALOAD, 0);
+//                mv.visitFieldInsn(GETFIELD, className, declaration.firstToken.getStringValue(), "Ljava/lang/String;");
+//                break;
+//				
+//			default:
+//				throw new RuntimeException("Not a valid Identifier");
+//			
+//			}
+//		}
+//		
+//		else {
+//			
+//			mv.visitVarInsn(ILOAD, declaration.getNest());		// if variable is constant, just load the value
+//			
+//		}
+//		
+		Type t = ident.getDec().getType();
+		String type = t == Type.NUMBER ? "I" : t == Type.BOOLEAN ? "Z" : "Ljava/lang/String;"; 
+		mv.visitFieldInsn(PUTFIELD, fullyQualifiedClassName, String.valueOf(ident.firstToken.getText()), type);
+		
+		return null;
 	}
 
 }

@@ -63,6 +63,7 @@ public class ASTVisitorImpl implements ASTVisitor {
 		}
 		
 		for(ProcDec p : block.procedureDecs) {
+			// arg += String.valueOf(procDec.ident.getText())
 			p.block.visit(this, arg);
 		}
 		
@@ -75,6 +76,7 @@ public class ASTVisitorImpl implements ASTVisitor {
 	@Override
 	public Object visitProgram(Program program, Object arg) throws PLPException {
 		// TODO Auto-generated method stub
+		// String arg =  edu/ufl/cise/plpfa22/prog 
 		program.block.visit(this, arg);
 		return null;
 	}
@@ -188,10 +190,14 @@ public class ASTVisitorImpl implements ASTVisitor {
 	@Override
 	public Object visitProcedure(ProcDec procDec, Object arg) throws PLPException {
 		// TODO Auto-generated method stub
+		// String currentClassname = (String) arg;
+		// currentClassName = currentClassName + "$" + String.valueOf(procDec.ident.getText())
+		// s.append above val
 		checkNotDecIdent(String.valueOf(procDec.ident.getText()));
 		procDec.setNest(this.symbolTable.scopeStack.peek());
 		procDec.setType(Type.PROCEDURE);
 		this.symbolTable.insert(String.valueOf(procDec.ident.getText()), procDec);
+		// 
 		return null;
 	}
 
@@ -232,6 +238,12 @@ public class ASTVisitorImpl implements ASTVisitor {
 		}
 		ident.setDec(d);
 		return null;
+		// Found only on left side of assignments and input statements. Assume a value is on top of the  ->
+		// stack and generate code to store the value in the variable indicated by the ident. 
+		// for loop into this$n as per decreasing value of n
+		// generation of code.
+		// Use nesting level to go up chain of this$n vars for non-local variable.
 	}
-
+	
+	
 }

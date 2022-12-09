@@ -11,6 +11,7 @@ package edu.ufl.cise.plpfa22;
  */
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.List;
 
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.MethodVisitor;
@@ -20,6 +21,40 @@ import org.objectweb.asm.util.TraceClassVisitor;
 import edu.ufl.cise.plpfa22.ast.Types.Type;
 
 public class CodeGenUtils{
+	
+	public record GenClass(String className, byte[] byteCode) {}
+	
+	
+	/**
+	 * Converts a classNume in Java notation with . separator to JVM classname 
+	 * with / separator
+	 * 
+	 * If already in JVM form, the original String is returned
+	 * 
+	 * @param className
+	 * @return
+	 */
+	static String toJMVClassName(String className) {
+		return className.replace('.','/');
+	}
+	
+	
+	/**
+	 * Converts a classNume in JVM notation with / separator to Java style classname 
+	 * with . separator
+	 * 
+	 * If already in Java-style form, the original String is returned 
+	 * 
+	 * @param className
+	 * @return
+	 */
+	static String toJavaClassName(String jvmClassName) {
+		return jvmClassName.replace('/', '.');
+	}
+	
+	static String toJVMClassDesc(String className) {
+		return "L"+ toJMVClassName(className)+";";
+	}
 
 	/**
 	 * Converts the provided byte array
@@ -37,18 +72,32 @@ public class CodeGenUtils{
 	}
 	
 	/**
-	 * Loader for dynamically generated classes.
-	 * Instantiated by getInstance.
-	 *
 	 */
 	public static class DynamicClassLoader extends ClassLoader {
+
 		public DynamicClassLoader(ClassLoader parent) {
 			super(parent);
+		}
+		
+		public DynamicClassLoader() {
+			super();
 		}
 
 		public Class<?> define(String className, byte[] bytecode) {
 			return super.defineClass(className, bytecode, 0, bytecode.length);
 		}
+
+		//requires mainclass to be first class in list
+		public Class<?> define(List<GenClass> generatedClasses) {
+			Class<?> mainClass = null;
+			for (GenClass genClass : generatedClasses) {
+				Class<?> cl = define(toJavaClassName(genClass.className()), genClass.byteCode());
+				if (mainClass == null)
+					mainClass = cl;
+			}
+			return mainClass;
+		}
+
 	};
 	
 	/**

@@ -396,19 +396,54 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 		MethodVisitor mv = (MethodVisitor) args.get(0);
 		String classname = (String) args.get(1);
 		
-		int nest = expressionIdent.getDec().getNest();
-		String parent = classes.get(nest);
-		String id = expressionIdent.getFirstToken().getStringValue();
+		Declaration dec = expressionIdent.getDec();
+		int cnest = expressionIdent.getNest();
+		int nest = dec.getNest();
+		int inx = classname.lastIndexOf("$");
+		String parent = null;
+		if(inx != -1) parent = classname.substring(0, inx);
+		String id = String.valueOf(expressionIdent.firstToken.getText());
 		Type t = expressionIdent.getType();
-		
-		mv.visitVarInsn(ALOAD, 0);
-		if(classes.size() != nest+1)
-		{
-			mv.visitFieldInsn(GETFIELD, classname, "this$"+nest, CodeGenUtils.toJVMClassDesc(parent));
+			
+//      for (int i = totalClasses - 1; i >= 0; i--) {
+//      c.visitVarInsn(ALOAD, 0);
+//      c.visitVarInsn(ALOAD, 1);
+//      
+//      for (int j = 1; j < totalClasses - i; j++) {
+//          c.visitFieldInsn(GETFIELD, classes.get(totalClasses - j), "this$0", CodeGenUtils.toJVMClassDesc(classes.get(totalClasses - j - 1)));
+//      }
+//      
+//      //c.visitFieldInsn(PUTFIELD, className, "this$" + i, CodeGenUtils.toJVMClassDesc(classes.get(i)));
+//      c.visitFieldInsn(PUTFIELD, className, "this$" + i, CodeGenUtils.toJVMClassDesc(parent));
+//  }
+  
+		if(dec instanceof ConstDec) {
+			ConstDec c = (ConstDec) dec;
+			mv.visitLdcInsn(c.val);			
 		}
-		
-		String type = t == Type.NUMBER ? "I" : t == Type.BOOLEAN ? "Z" : "Ljava/lang/String;";
-		mv.visitFieldInsn(GETFIELD, parent, id, type);		
+		else {
+			String currentClass = classname;
+			String parentClass = parent;
+			mv.visitVarInsn(ALOAD, 0);
+			// GETFIELD
+			for(int i = cnest-1; i >= nest; i--)
+			{
+				mv.visitFieldInsn(GETFIELD, currentClass, "this$"+i, CodeGenUtils.toJVMClassDesc(parentClass));
+				int cinx = currentClass.lastIndexOf("$");
+				if(cinx == -1) break;
+				currentClass = currentClass.substring(0, cinx);
+				
+				int pinx = parentClass.lastIndexOf("$");
+				if(pinx == -1) break;
+				parentClass = parentClass.substring(0, pinx);
+			}
+
+			String type = t == Type.NUMBER ? "I" : t == Type.BOOLEAN ? "Z" : "Ljava/lang/String;";
+
+			mv.visitFieldInsn(GETFIELD, currentClass, id, type);
+
+		}
+			
 		
 		return null;
 	}

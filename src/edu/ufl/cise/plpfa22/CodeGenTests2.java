@@ -16,6 +16,7 @@ import edu.ufl.cise.plpfa22.CodeGenUtils.GenClass;
 import edu.ufl.cise.plpfa22.ast.ASTNode;
 import edu.ufl.cise.plpfa22.ast.PrettyPrintVisitor;
 
+@SuppressWarnings("unchecked")
 public class CodeGenTests2 {
 
 
@@ -37,7 +38,6 @@ public class CodeGenTests2 {
 		ast.visit(CompilerComponentFactory.getScopeVisitor(), null);
 		ast.visit(CompilerComponentFactory.getTypeInferenceVisitor(), null);
 		show(ast);
-		@SuppressWarnings("unchecked")
 		List<GenClass> classes =  (List<GenClass>) ast.visit(CompilerComponentFactory.getCodeGenVisitor(className, packageName, ""), null);
 		show(classes);
 		show("----------------");
@@ -855,352 +855,12 @@ public void test7(TestInfo testInfo) throws Exception{
 	loadClassesAndRunMain(classes, className);		
 }		
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//Tests from the Professor. Please comment if I calculated anything incorrectly.
+	
 
-
-    @Test
-    public void test01(TestInfo testInfo) throws Exception {
-
-        String input = """
-                BEGIN
-                	IF ("FA" <= "FALSE")
-                	THEN 
-                		! ((3+4)*10)%2				
-                END
-                .
-                """;
-
-        String shortClassName = "prog";
-        String JVMpackageName = "edu/ufl/cise/plpfa22";
-        List<GenClass> classes = compile(input, shortClassName, JVMpackageName);
-        Object[] args = new Object[1];
-        String className = "edu.ufl.cise.plpfa22.prog";
-        loadClassesAndRunMain(classes, className);
-//		System.setOut(new PrintStream(outContent));
-//		System.setErr(new PrintStream(errContent));
-		loadClassesAndRunMain(classes, className);
-		String expected = """
-			0
-			""";
-//		System.setOut(originalOut);
-//		System.setErr(originalErr);
-    }
-
-
-//    @Test
-//    public void test11(TestInfo testInfo) throws Exception {
-//
-//        String input = """
-//			CONST a=123, b=346;
-//			VAR c,d;
-//			BEGIN
-//				c:=((a*b)+(a+b));
-//				d:=c%(a+b+c);
-//				! (c/d) >= 0
-//			END
-//			.
-//			""";
-//
-//        String shortClassName = "prog";
-//        String JVMpackageName = "edu/ufl/cise/plpfa22";
-//        List<GenClass> classes = compile(input, shortClassName, JVMpackageName);
-//        Object[] args = new Object[1];
-//        String className = "edu.ufl.cise.plpfa22.prog";
-//        loadClassesAndRunMain(classes, className);
-////		System.setOut(new PrintStream(outContent));
-////		System.setErr(new PrintStream(errContent));
-//		loadClassesAndRunMain(classes, className);
-//		String expected = """
-//			true
-//			""";
-////		System.setOut(originalOut);
-////		System.setErr(originalErr);
-
-   @Test
-    public void test21(TestInfo testInfo) throws Exception {
-
-        String input = """
-			CONST d=23, e=34, f=45, g=TRUE;
-			VAR a,b,c;
-			BEGIN
-				c:=d*e;
-				b:=c>=f;
-				IF b=g
-				THEN
-					a:="IF PASSED";
-					! a
-			END
-			.
-			""";
-
-        String shortClassName = "prog";
-        String JVMpackageName = "edu/ufl/cise/plpfa22";
-        List<GenClass> classes = compile(input, shortClassName, JVMpackageName);
-        Object[] args = new Object[1];
-        String className = "edu.ufl.cise.plpfa22.prog";
-        loadClassesAndRunMain(classes, className);
-//		System.setOut(new PrintStream(outContent));
-//		System.setErr(new PrintStream(errContent));
-		loadClassesAndRunMain(classes, className);
-		String expected = """
-			IF PASSED
-			""";
-//		assertEquals(expected.replace("\n", "\r\n"), outContent.toString());
-//		System.setOut(originalOut);
-//		System.setErr(originalErr);
-
-    }
-
-    @Test
-    public void test31(TestInfo testInfo) throws Exception {
-
-        String input = """
-			BEGIN
-				! (FALSE<TRUE)*(FALSE>TRUE);
-				! (FALSE+TRUE)*(FALSE*TRUE);
-				! (FALSE*TRUE)*(FALSE*TRUE);
-				! ((FALSE+FALSE)+(FALSE*TRUE)+FALSE)+(FALSE*(FALSE+TRUE)*(FALSE*TRUE))
-			END
-			.
-			""";
-
-
-        String shortClassName = "prog";
-        String JVMpackageName = "edu/ufl/cise/plpfa22";
-        List<GenClass> classes = compile(input, shortClassName, JVMpackageName);
-        Object[] args = new Object[1];
-        String className = "edu.ufl.cise.plpfa22.prog";
-        loadClassesAndRunMain(classes, className);
-//		System.setOut(new PrintStream(outContent));
-//		System.setErr(new PrintStream(errContent));
-		loadClassesAndRunMain(classes, className);
-		String expected = """
-			false
-			false
-			false
-			false
-			""";
-		//assertEquals(expected.replace("\n", "\r\n"), outContent.toString());
-//		System.setOut(originalOut);
-//		System.setErr(originalErr);
-    }
-
-    @Test
-    public void test41(TestInfo testInfo) throws Exception {
-
-        String input = """
-			BEGIN
-				! "Hello "+"World!";
-				! ("Hello "+"World!") = "Hello World!"
-			END
-			.
-			""";
-
-
-        String shortClassName = "prog";
-        String JVMpackageName = "edu/ufl/cise/plpfa22";
-        List<GenClass> classes = compile(input, shortClassName, JVMpackageName);
-        Object[] args = new Object[1];
-        String className = "edu.ufl.cise.plpfa22.prog";
-        loadClassesAndRunMain(classes, className);
-		String expected = """
-			Hello World!
-			true
-			""";
-		//assertEquals(expected.replace("\n", "\r\n"), outContent.toString());
-//		System.setOut(originalOut);
-//		System.setErr(originalErr);
-    }
-
-    @Test
-    public void test411(TestInfo testInfo) throws Exception {
-
-        String input = """
-			BEGIN
-				! "Hello "+"World!";
-				! ("Hello "+"World!") = "Hello World!"
-			END
-			.
-			""";
-
-
-		String shortClassName = "prog";
-		String JVMpackageName = "edu/ufl/cise/plpfa22";
-		List<GenClass> classes = compile(input, shortClassName, JVMpackageName);
-		Object[] args = new Object[1];
-		String className = "edu.ufl.cise.plpfa22.prog";
-		loadClassesAndRunMain(classes, className);
-//		System.setOut(new PrintStream(outContent));
-//		System.setErr(new PrintStream(errContent));
-		loadClassesAndRunMain(classes, className);
-		String expected = """
-			Hello World!
-			true
-			""";
-		//assertEquals(expected.replace("\n", "\r\n"), outContent.toString());
-//		System.setOut(originalOut);
-//		System.setErr(originalErr);
-    }
-
-
-    @Test
-    public void test51(TestInfo testInfo) throws Exception {
-
-        String input = """
-			CONST name="@Name", world="World";
-			VAR hello;
-			PROCEDURE p;
-				BEGIN
-					hello:="HELLO+";
-					IF TRUE
-					THEN
-						! hello+" " + "-" + world+ " :"+" " + name
-				END;
-			CALL p
-			.
-			""";
-
-
-		String shortClassName = "prog";
-		String JVMpackageName = "edu/ufl/cise/plpfa22";
-		List<GenClass> classes = compile(input, shortClassName, JVMpackageName);
-		Object[] args = new Object[1];
-		String className = "edu.ufl.cise.plpfa22.prog";
-		loadClassesAndRunMain(classes, className);
-//		System.setOut(new PrintStream(outContent));
-//		System.setErr(new PrintStream(errContent));
-		loadClassesAndRunMain(classes, className);
-		String expected = """
-			HELLO+ -World : @Name
-			""";
-		//assertEquals(expected.replace("\n", "\r\n"), outContent.toString());
-//		System.setOut(originalOut);
-//		System.setErr(originalErr);
-    }
-
-    @Test
-    public void test61(TestInfo testInfo) throws Exception {
-
-        String input = """
-			CONST str="Is this", intstr = "12345", intstr2 = "456", str2="equal";
-			VAR a, b, c;
-			BEGIN
-				a:= str+str2;
-				WHILE (a = "Is this equal?")
-				DO
-					BEGIN
-						IF ("STRiNG CoMPaRe" > "strIng cOmpArE")
-						THEN 
-							BEGIN
-								! "THIS is";
-								! TRUE
-							END;
-						!"This is Equal!";
-						a:=a+" not equal";
-						!a			
-					END;
-				b:=intstr+"6";
-				WHILE ((b >= intstr2) * (b > "56") * ("123" < intstr))
-				DO 
-					BEGIN
-						IF ((b >= intstr2) + (intstr2 > "56") * ("123" < intstr))
-						THEN
-							BEGIN 
-								IF (((b >= intstr2) + (intstr2 > "56")) * ("123" < intstr))
-								THEN 
-									! "IF 3 PASSED!";
-								! "IF 2 PASSED!"
-							END;
-						! "IF 1 PASSED!";
-						b:=b+"7"
-					END
-			END
-			.
-			""";
-
-		String shortClassName = "prog";
-		String JVMpackageName = "edu/ufl/cise/plpfa22";
-		List<GenClass> classes = compile(input, shortClassName, JVMpackageName);
-		Object[] args = new Object[1];
-		String className = "edu.ufl.cise.plpfa22.prog";
-		loadClassesAndRunMain(classes, className);
-//		System.setOut(new PrintStream(outContent));
-//		System.setErr(new PrintStream(errContent));
-		loadClassesAndRunMain(classes, className);
-		String expected = """
-			IF 3 PASSED!
-			IF 2 PASSED!
-			IF 1 PASSED!
-			""";
-//		assertEquals(expected.replace("\n", "\r\n"), outContent.toString());
-//		System.setOut(originalOut);
-//		System.setErr(originalErr);
-    }
-
-   @Test
-    public void test71(TestInfo testInfo) throws Exception {
-
-        String input = """
-			CONST int=123;
-			VAR int1;
-			PROCEDURE p;
-				CONST int1=456;
-				BEGIN
-					IF ((int*int1) >= (int1*int)) + ((int+int1) <= int1+int)
-					THEN 
-						BEGIN
-							! "(int*int1)" + "(int1+int) = ";
-							! (int*int1) + (int1+int)
-						END
-				END;
-				
-			PROCEDURE q;
-				BEGIN
-					int1:=456;
-					IF ((int*int1) >= (int1*int)) * ((int+int1) <= int1+int)
-					THEN 
-						BEGIN
-							! "(int*int1)" + "(int1+int) = ";
-							! (int*int1) + (int1+int)
-						END;
-					!"Print here :)"
-				END;
-				
-			BEGIN
-				CALL p;
-				CALL q
-			END
-			.
-			""";
-
-
-		String shortClassName = "prog";
-		String JVMpackageName = "edu/ufl/cise/plpfa22";
-		List<GenClass> classes = compile(input, shortClassName, JVMpackageName);
-		Object[] args = new Object[1];
-		String className = "edu.ufl.cise.plpfa22.prog";
-		loadClassesAndRunMain(classes, className);
-//		System.setOut(new PrintStream(outContent));
-//		System.setErr(new PrintStream(errContent));
-		loadClassesAndRunMain(classes, className);
-		String expected = """
-					(int*int1)(int1+int) =
-					56667
-					(int*int1)(int1+int) =
-					56667
-					Print here :)
-					   
-				""";
-//		assertEquals(expected.replace("\n", "\r\n"), outContent.toString());
-//		System.setOut(originalOut);
-//		System.setErr(originalErr);
-    }
-
- @Test
-    public void test8(TestInfo testInfo) throws Exception {
-
-        String input = """
+@DisplayName("test8")
+@Test
+public void test8(TestInfo testInfo) throws Exception{
+	String input = """
 			CONST space="SPACE";	VAR spaces;
 			PROCEDURE call;
 				BEGIN
@@ -1230,40 +890,203 @@ public void test7(TestInfo testInfo) throws Exception{
 			END
 			.
 			""";
+		
+	String shortClassName = "prog";
+	String JVMpackageName = "edu/ufl/cise/plpfa22";
+	List<GenClass> classes = compile(input, shortClassName, JVMpackageName);		
+	Object[] args = new Object[1];  
+	String className = "edu.ufl.cise.plpfa22.prog";
+	loadClassesAndRunMain(classes, className);		
+}
 
-		String shortClassName = "prog";
-		String JVMpackageName = "edu/ufl/cise/plpfa22";
-		List<GenClass> classes = compile(input, shortClassName, JVMpackageName);
-		Object[] args = new Object[1];
-		String className = "edu.ufl.cise.plpfa22.prog";
-		loadClassesAndRunMain(classes, className);
-//		System.setOut(new PrintStream(outContent));
-//		System.setErr(new PrintStream(errContent));
-		loadClassesAndRunMain(classes, className);
-		String expected = """
-				 true
-				 false
-				 false
-				 false
-				 
-				 -+*- END -+*-
-				 
-				 true
-				 true
-				 false
-				 
-				 -+*- END -+*-
-				 
-				 true
-					   
-				""";
-//		assertEquals(expected.replace("\n", "\r\n"), outContent.toString());
-//		System.setOut(originalOut);
-//		System.setErr(originalErr);
-    }
+	
+@DisplayName("test9")
+@Test
+public void test9(TestInfo testInfo) throws Exception{
+	String input = """
+			VAR e, f, g;
+			PROCEDURE proc;
+				BEGIN
+					e:=e*2;
+					!e;
+					IF (2+2-3 <= 7)*(FALSE < TRUE)
+					THEN
+						IF ("2+2-3" = "2+2+3")+(222/2 >= 111)
+						THEN
+							! 222/2 + 111;
+					!"Hello!!";
+				END;
+			CALL proc
+			.
+			""";
+	String shortClassName = "prog";
+	String JVMpackageName = "edu/ufl/cise/plpfa22";
+	List<GenClass> classes = compile(input, shortClassName, JVMpackageName);		
+	Object[] args = new Object[1];  
+	String className = "edu.ufl.cise.plpfa22.prog";
+	loadClassesAndRunMain(classes, className);		
+}
+
+	
+	
+@DisplayName("test12")
+@Test
+public void test12(TestInfo testInfo) throws Exception{
+	String input = """
+			PROCEDURE p;
+				PROCEDURE q;;;
+
+			PROCEDURE q;
+				PROCEDURE p;;;
+
+			PROCEDURE r;
+				PROCEDURE p;
+					PROCEDURE q;
+						VAR r;
+						BEGIN
+							r:=3;
+							IF r=3
+							THEN
+								WHILE r>=0
+								DO
+									BEGIN
+										r:=r+r;
+										!r
+									END
+						END
+					;
+					CALL q
+				;
+				CALL p
+			;
+			CALL r
+			.
+			""";
+	String shortClassName = "prog";
+	String JVMpackageName = "edu/ufl/cise/plpfa22";
+	List<GenClass> classes = compile(input, shortClassName, JVMpackageName);		
+	Object[] args = new Object[1];  
+	String className = "edu.ufl.cise.plpfa22.prog";
+	loadClassesAndRunMain(classes, className);		
+}
 
 
 
+@DisplayName("test13")
+@Test
+public void test13(TestInfo testInfo) throws Exception{
+	String input = """
+			CONST int="int", string="string", false=FALSE;
+			VAR true;
+			PROCEDURE p;
+				VAR int;
+				BEGIN
+					int :="int";
+					true:=TRUE;
+					int:=int;
+					WHILE (true = TRUE)
+					DO
+						BEGIN 
+							int:=int+int;
+							IF false >= FALSE
+							THEN
+								BEGIN
+									true:= false;
+									!"TRUE 1"
+								END;
+								
+							IF false # FALSE
+							THEN 
+								BEGIN
+									true:= TRUE;
+									!"TRUE 2"
+								END
+						END
+				END;
+			CALL p
+			.
+			""";
+	String shortClassName = "prog";
+	String JVMpackageName = "edu/ufl/cise/plpfa22";
+	List<GenClass> classes = compile(input, shortClassName, JVMpackageName);		
+	Object[] args = new Object[1];  
+	String className = "edu.ufl.cise.plpfa22.prog";
+	loadClassesAndRunMain(classes, className);		
+}
+
+
+	
+
+
+@DisplayName("test14")
+@Test
+public void test14(TestInfo testInfo) throws Exception{
+	String input = """
+			BEGIN
+			//COMMENT throws Error @
+			//Throw Error --> \\n -->
+				IF ((123@456) >= (456*123)) + ((123+456) <= 456+123)
+				THEN 
+					BEGIN
+						! "(123*456)" + "(456+123) = "
+					END
+			END
+			.
+			""";
+	String shortClassName = "prog";
+	String JVMpackageName = "edu/ufl/cise/plpfa22";
+	List<GenClass> classes = compile(input, shortClassName, JVMpackageName);		
+	Object[] args = new Object[1];  
+	String className = "edu.ufl.cise.plpfa22.prog";
+	loadClassesAndRunMain(classes, className);		
+}
+
+	
+
+
+@DisplayName("test15")
+@Test
+public void test15(TestInfo testInfo) throws Exception{
+	String input = """
+			BEGIN
+			//COMMENT throws Error SYNTAX
+			//
+				IF (TRUE * TRUE) + (FALSE *FALSE)
+				THEN 
+					BEGIN
+					//Throw Error --> \\n --> \\n
+						! "Error Here"
+						! "Nope, error here"
+					END
+			END
+			.
+			""";
+	String shortClassName = "prog";
+	String JVMpackageName = "edu/ufl/cise/plpfa22";
+	List<GenClass> classes = compile(input, shortClassName, JVMpackageName);		
+	Object[] args = new Object[1];  
+	String className = "edu.ufl.cise.plpfa22.prog";
+	loadClassesAndRunMain(classes, className);		
+}
+
+
+
+
+@DisplayName("test16")
+@Test
+public void test16(TestInfo testInfo) throws Exception{
+	String input = """
+			! "COncat string bool err"+((FALSE+TRUE)+(FALSE*TRUE)+TRUE)
+			.
+			""";
+
+	String shortClassName = "prog";
+	String JVMpackageName = "edu/ufl/cise/plpfa22";
+	List<GenClass> classes = compile(input, shortClassName, JVMpackageName);		
+	Object[] args = new Object[1];  
+	String className = "edu.ufl.cise.plpfa22.prog";
+	loadClassesAndRunMain(classes, className);		
+}
 
 
 }

@@ -114,7 +114,7 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 		mv.visitTypeInsn(NEW, fullyQualifiedClassName);
 		mv.visitInsn(DUP);
 		mv.visitMethodInsn(INVOKESPECIAL, fullyQualifiedClassName, "<init>", "()V", false);
-		mv.visitMethodInsn(INVOKESPECIAL, fullyQualifiedClassName, "run", "()V", false);
+		mv.visitMethodInsn(INVOKEVIRTUAL, fullyQualifiedClassName, "run", "()V", false);
 		mv.visitInsn(RETURN);
 		mv.visitMaxs(0, 0);
 		mv.visitEnd();
@@ -178,23 +178,40 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 		String classname = (String) args.get(1);
 		
 		List<Object> expr_args = Arrays.asList(mv, classname);
-		statementAssign.expression.visit(this, expr_args);	//	visit the expression and evaluate it
+		mv.visitVarInsn(ALOAD, 0);									// ALOAD 0
 		
 		int nest = statementAssign.ident.getDec().getNest();
-		String parent = classes.get(nest), id = statementAssign.ident.getFirstToken().getStringValue();
+		int cnest = statementAssign.ident.getNest();
+		int inx = classname.lastIndexOf("$");
+		String parent = null;
+		if(inx != -1) {
+			parent = classname.substring(0, inx);
+		}
+		String id = String.valueOf(statementAssign.ident.getText());
 		Type t = statementAssign.expression.getType();
 		
-		mv.visitVarInsn(ALOAD, 0);
-		if(classes.size() != nest+1)
+		String currentClass = classname;
+		String parentClass = parent;
+		
+		// GETFIELD
+		for(int i = cnest-1; i >= nest; i--)
 		{
-			mv.visitFieldInsn(GETFIELD, classname, "this$"+nest, CodeGenUtils.toJVMClassDesc(parent));
+			mv.visitFieldInsn(GETFIELD, currentClass, "this$"+i, CodeGenUtils.toJVMClassDesc(parentClass));
+			int cinx = currentClass.lastIndexOf("$");
+			if(cinx == -1) break;
+			currentClass = currentClass.substring(0, cinx);
+			
+			int pinx = parentClass.lastIndexOf("$");
+			if(pinx == -1) break;
+			parentClass = parentClass.substring(0, pinx);
 		}
-		mv.visitInsn(SWAP);
+		
+		//mv.visitInsn(SWAP);
 		String type = t == Type.NUMBER ? "I" : t == Type.BOOLEAN ? "Z" : "Ljava/lang/String;";
-		mv.visitFieldInsn(PUTFIELD, parent, id, type);
 		
-		//statementAssign.ident.visit(this, arg);			//	visit the ident
+		statementAssign.expression.visit(this, expr_args);	//	LDC expr val
 		
+		mv.visitFieldInsn(PUTFIELD, currentClass, id, type);		// PUTFIELD		
 		return null;
 	}
 
@@ -203,7 +220,7 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 		ClassWriter classWriter = (ClassWriter) arg;
         Type t = varDec.getType();
         String type = t == Type.NUMBER ? "I" : t == Type.BOOLEAN ? "Z" : "Ljava/lang/String;";
-        classWriter.visitField(ACC_PUBLIC, varDec.ident.getStringValue(), type, null, null);
+        classWriter.visitField(ACC_PUBLIC, String.valueOf(varDec.ident.getText()), type, null, null);
         classWriter.visitEnd();
         return null;
 	}
@@ -211,25 +228,41 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 	@Override
 	public Object visitStatementCall(StatementCall statementCall, Object arg) throws PLPException {
 		
-		String proc = statementCall.ident.getFirstToken().getStringValue();
+		String proc = String.valueOf(statementCall.ident.getText());
 		List<Object> args = (List<Object>) arg;
 		MethodVisitor mv = (MethodVisitor) args.get(0);
 		String classname = (String) args.get(1);
+		String currentClass = classname;
+		
 		int nest = statementCall.ident.getDec().getNest();
-		String parent = classes.get(nest);
-	
-		String callProcname = parent + "$" + proc;
+		int cnest = statementCall.ident.getNest();
+		
+		for(int i = cnest-1; i>=nest; i--)
+		{
+			int inx = classname.lastIndexOf("$");
+			if(inx == -1) break;
+			
+			classname = classname.substring(0, inx);
+		}
+		
+		String callProcname = classname + "$" + proc;
 		
 		mv.visitTypeInsn(NEW, callProcname);
 		mv.visitInsn(DUP);
 		mv.visitVarInsn(ALOAD, 0);
 		
-		if(classes.size() != nest+1)
+		for(int i = cnest-1; i>=nest; i--)
 		{
-			mv.visitFieldInsn(GETFIELD, classname, "this$" + nest, CodeGenUtils.toJVMClassDesc(parent));
+			int inx = currentClass.lastIndexOf("$");
+			if(inx == -1) break;
+			
+			mv.visitFieldInsn(GETFIELD, currentClass, "this$"+i, CodeGenUtils.toJVMClassDesc(currentClass.substring(0, inx)));
+			
+			currentClass = currentClass.substring(0, inx);
 		}
-		mv.visitMethodInsn(INVOKESPECIAL, callProcname, "<init>", "("+CodeGenUtils.toJVMClassDesc(parent)+")V", false);
-		mv.visitMethodInsn(INVOKESPECIAL, callProcname, "run", "()V", false);
+		
+		mv.visitMethodInsn(INVOKESPECIAL, callProcname, "<init>", "("+ CodeGenUtils.toJVMClassDesc(classname) +")V", false);
+		mv.visitMethodInsn(INVOKEVIRTUAL, callProcname, "run", "()V", false);
 		return null;
 	}
 
@@ -240,7 +273,7 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 		MethodVisitor mv = (MethodVisitor) args.get(0);
 		String classname = (String) args.get(1);
 		
-		String id = statementInput.ident.getFirstToken().getStringValue();
+		String id = String.valueOf(statementInput.ident.getText());
 		Type t = statementInput.ident.getDec().getType();
 		mv.visitVarInsn(ALOAD, 0);
 		mv.visitTypeInsn(NEW, "java/util/Scanner");
@@ -404,19 +437,9 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 		if(inx != -1) parent = classname.substring(0, inx);
 		String id = String.valueOf(expressionIdent.firstToken.getText());
 		Type t = expressionIdent.getType();
-			
-//      for (int i = totalClasses - 1; i >= 0; i--) {
-//      c.visitVarInsn(ALOAD, 0);
-//      c.visitVarInsn(ALOAD, 1);
-//      
-//      for (int j = 1; j < totalClasses - i; j++) {
-//          c.visitFieldInsn(GETFIELD, classes.get(totalClasses - j), "this$0", CodeGenUtils.toJVMClassDesc(classes.get(totalClasses - j - 1)));
-//      }
-//      
-//      //c.visitFieldInsn(PUTFIELD, className, "this$" + i, CodeGenUtils.toJVMClassDesc(classes.get(i)));
-//      c.visitFieldInsn(PUTFIELD, className, "this$" + i, CodeGenUtils.toJVMClassDesc(parent));
-//  }
-  
+		
+		
+		
 		if(dec instanceof ConstDec) {
 			ConstDec c = (ConstDec) dec;
 			mv.visitLdcInsn(c.val);			
@@ -437,11 +460,20 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 				if(pinx == -1) break;
 				parentClass = parentClass.substring(0, pinx);
 			}
-
+			
+			
+//			if(classes.size() != nest+1)
+//			{
+//				mv.visitFieldInsn(GETFIELD, classname, "this$"+nest, CodeGenUtils.toJVMClassDesc(parent));
+//			}
+			
 			String type = t == Type.NUMBER ? "I" : t == Type.BOOLEAN ? "Z" : "Ljava/lang/String;";
-
+//			if(parent == null) {
 			mv.visitFieldInsn(GETFIELD, currentClass, id, type);
-
+//			}
+//			else {				
+//				mv.visitFieldInsn(GETFIELD, parentClass, id, type);	
+//			}
 		}
 			
 		
@@ -476,14 +508,45 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 	public Object visitProcedure(ProcDec procDec, Object arg) throws PLPException {
 		ClassWriter classWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         String parent = (String) arg;
-        String proc = procDec.ident.getStringValue();
+        String proc = String.valueOf(procDec.ident.getText());
 
         String className = parent + "$" + proc;
         classWriter.visit(V16, ACC_PUBLIC | ACC_SUPER, className, null, "java/lang/Object", new String[]{"java/lang/Runnable"});
 
         classWriter.visitNestHost(fullyQualifiedClassName);
-        classWriter.visitInnerClass(className, parent, proc, 0);
-
+        
+        String currentClass = className;
+        String currentParent = parent;
+        String currentProc = proc;
+        
+        while(currentClass.contains("$")) {        	
+        	classWriter.visitInnerClass(currentClass, currentParent, currentProc, 0);
+        	int count = 0;
+        	for(int i = 0; i < currentClass.length(); i++)
+        	{
+        		if(currentClass.charAt(i) == '$') count++;
+        	}
+        	if(count == 1) break;
+        	int cinx = currentClass.lastIndexOf("$");
+        	if(cinx == -1) break;
+        	currentClass = currentClass.substring(0, cinx);
+        	
+        	int pinx = currentParent.lastIndexOf("$");
+        	currentParent = currentParent.substring(0, pinx);
+        	
+        	cinx = currentClass.lastIndexOf("$");
+        	if(cinx == -1) break;
+        	
+        	currentProc = currentClass.substring(cinx+1);
+        }
+        
+        List<ProcDec> ps = procDec.block.procedureDecs;
+        
+        for(ProcDec d : ps) {
+        	String id = String.valueOf(d.ident.getText());
+        	classWriter.visitInnerClass(className + "$" + id, className, id, 0);
+        }
+        
         for (int i = 0; i < classes.size(); i++) {
             classWriter.visitField(ACC_FINAL | ACC_SYNTHETIC, "this$" + i, CodeGenUtils.toJVMClassDesc(classes.get(i)), null, null);
             classWriter.visitEnd();
@@ -493,17 +556,21 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
         c.visitCode();
 
         int totalClasses = classes.size();
-        for (int i = totalClasses - 1; i >= 0; i--) {
-            c.visitVarInsn(ALOAD, 0);
-            c.visitVarInsn(ALOAD, 1);
-            
-            for (int j = 1; j < totalClasses - i; j++) {
-                c.visitFieldInsn(GETFIELD, classes.get(totalClasses - j), "this$0", CodeGenUtils.toJVMClassDesc(classes.get(totalClasses - j - 1)));
-            }
-            
-            c.visitFieldInsn(PUTFIELD, className, "this$" + i, CodeGenUtils.toJVMClassDesc(classes.get(i)));
-        }
-
+//        for (int i = totalClasses - 1; i >= 0; i--) {
+//            c.visitVarInsn(ALOAD, 0);
+//            c.visitVarInsn(ALOAD, 1);
+//            
+//            for (int j = 1; j < totalClasses - i; j++) {
+//                c.visitFieldInsn(GETFIELD, classes.get(totalClasses - j), "this$0", CodeGenUtils.toJVMClassDesc(classes.get(totalClasses - j - 1)));
+//            }
+//            
+//            //c.visitFieldInsn(PUTFIELD, className, "this$" + i, CodeGenUtils.toJVMClassDesc(classes.get(i)));
+//            c.visitFieldInsn(PUTFIELD, className, "this$" + i, CodeGenUtils.toJVMClassDesc(parent));
+//        }
+        
+        c.visitVarInsn(ALOAD, 0);
+        c.visitVarInsn(ALOAD, 1);
+        c.visitFieldInsn(PUTFIELD, className, "this$" + String.valueOf(totalClasses-1), CodeGenUtils.toJVMClassDesc(parent));
         c.visitVarInsn(ALOAD, 0);
         c.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
         c.visitInsn(RETURN);
@@ -530,7 +597,7 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 		ClassWriter classWriter = (ClassWriter) arg;
         Type t = constDec.getType();
         String type = t == Type.NUMBER ? "I" : t == Type.BOOLEAN ? "Z" : "Ljava/lang/String;";
-        classWriter.visitField(ACC_PUBLIC | ACC_FINAL, constDec.ident.getStringValue(), type, null, constDec.val);
+        classWriter.visitField(ACC_PUBLIC | ACC_FINAL, String.valueOf(constDec.ident.getText()), type, null, constDec.val);
         classWriter.visitEnd();
         return null;
 	}
